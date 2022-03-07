@@ -1,0 +1,24 @@
+function out = ApplySplineSet(obj,structural_file,varargin)
+%APPLYSTRUCTURALGPS Summary of this function goes here
+%   Detailed explanation goes here
+    p = inputParser;
+    p.addParameter('Beta',0)
+    p.addParameter('Alpha',0)
+    p.parse(varargin{:})
+    
+    % get the coordinates of all the structural points that can be used in
+    % the splines
+    load(structural_file,'model')
+    coords = model.GRID.getDrawCoords('Mode','undeformed');
+    coords = fh.roty(p.Results.Alpha) * fh.rotz(p.Results.Beta) * coords;
+    [~,i_gid,i] =intersect(obj.GridIDs,model.GRID.GID);
+    coords = coords(:,i);
+    GIDs = obj.GridIDs(i_gid);
+
+    wingSections = arrayfun(@(x)x.ApplySplineSet(coords,GIDs),obj.WingSections);
+    % get the coordinates of all the structural points that can be used in
+    % the splines
+    out = obj.copy();
+    out.WingSections = wingSections;
+end
+

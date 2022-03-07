@@ -1,0 +1,64 @@
+# CompilerName=msvc150
+# Mode=optim
+ninja_required_version = 1.3
+
+# Basic folders
+root = .
+builddir = $root\build\win64
+matlabdir = C:\Program Files\MATLAB\R2021a
+startdir = C:\Git\AlbatrossOneNastran\matlab\+laca\+panel
+
+# Toolchain information
+cc = cl
+cxx = cl
+linker = link
+linkerxx = link
+
+cflags =  /c /Zp8 /GR /W3 /EHs /nologo /MD /D_CRT_SECURE_NO_DEPRECATE /D_SCL_SECURE_NO_DEPRECATE /D_SECURE_SCL=0   /DMATLAB_MEX_FILE  /DMATLAB_MEX_FILE /O2 /Oy- /DNDEBUG /fp:strict /source-charset:utf-8 /I "$root" /I "$startdir" /I "$root\interface" /I "$matlabdir\extern\include" /I "." -DMODEL=vlm_C_code  
+
+cxxflags =   /c /Zp8 /GR /W3 /EHs /nologo /MD /D_CRT_SECURE_NO_DEPRECATE /D_SCL_SECURE_NO_DEPRECATE /D_SECURE_SCL=0   /DMATLAB_MEX_FILE  /DMATLAB_MEX_FILE /O2 /Oy- /DNDEBUG /fp:strict /source-charset:utf-8 /I "$root" /I "$startdir" /I "$root\interface" /I "$matlabdir\extern\include" /I "." -DMODEL=vlm_C_code  
+
+ldflags =  /nologo /manifest   /DLL /LIBPATH:"$matlabdir\extern\lib\win64\microsoft" libmx.lib libmex.lib libmat.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib  /out:"vlm_C_code.mexw64" /LIBPATH:"$matlabdir\extern\lib\win64\microsoft" libmwblas.lib libemlrt.lib libcovrt.lib libut.lib libmwmathutil.lib  /export:mexFunction /export:mexfilerequiredapiversion /export:emlrtMexFcnProperties /export:filiment_force /export:generate_AIC /export:generate_rings /export:induced_velocity /export:panel_normal /export:vortex_line /export:vortex_ring /export:vlm_C_code_initialize /export:vlm_C_code_terminate /export:vlm_C_code_atexit /export:emxFree_int32_T /export:emxFree_uint32_T /export:emxEnsureCapacity_int32_T /export:emxInit_int32_T /export:emxEnsureCapacity_uint32_T /export:emxInit_uint32_T /export:emxFree_boolean_T /export:emxInit_boolean_T /export:emxEnsureCapacity_boolean_T /export:emxFree_real_T /export:emxInit_real_T /export:emxEnsureCapacity_real_T
+
+# Build Rules
+rule cc
+    command = $cc $cflags $in /Fo$out
+
+rule cxx
+    command = $cxx $cxxflags $in /Fo$out
+
+rule link
+    command = $linker @$out.rsp $ldflags
+    rspfile = $out.rsp
+    rspfile_content = $in
+
+rule linkxx
+    command = $linkerxx $in $ldflags
+
+# Build
+build $builddir\vlm_C_code_data.obj : cc $root\vlm_C_code_data.c
+build $builddir\rt_nonfinite.obj : cc $root\rt_nonfinite.c
+build $builddir\vlm_C_code_initialize.obj : cc $root\vlm_C_code_initialize.c
+build $builddir\vlm_C_code_terminate.obj : cc $root\vlm_C_code_terminate.c
+build $builddir\filiment_force.obj : cc $root\filiment_force.c
+build $builddir\cross.obj : cc $root\cross.c
+build $builddir\eml_int_forloop_overflow_check.obj : cc $root\eml_int_forloop_overflow_check.c
+build $builddir\repmat.obj : cc $root\repmat.c
+build $builddir\sum.obj : cc $root\sum.c
+build $builddir\generate_AIC.obj : cc $root\generate_AIC.c
+build $builddir\vortex_ring.obj : cc $root\vortex_ring.c
+build $builddir\generate_rings.obj : cc $root\generate_rings.c
+build $builddir\panel_normal.obj : cc $root\panel_normal.c
+build $builddir\sumMatrixIncludeNaN.obj : cc $root\sumMatrixIncludeNaN.c
+build $builddir\indexShapeCheck.obj : cc $root\indexShapeCheck.c
+build $builddir\induced_velocity.obj : cc $root\induced_velocity.c
+build $builddir\vortex_line.obj : cc $root\vortex_line.c
+build $builddir\_coder_vlm_C_code_api.obj : cc $root\interface\_coder_vlm_C_code_api.c
+build $builddir\_coder_vlm_C_code_mex.obj : cc $root\interface\_coder_vlm_C_code_mex.c
+build $builddir\sqrt.obj : cc $root\sqrt.c
+build $builddir\vlm_C_code_emxutil.obj : cc $root\vlm_C_code_emxutil.c
+build $builddir\_coder_vlm_C_code_info.obj : cc $root\interface\_coder_vlm_C_code_info.c
+build $builddir\c_mexapi_version.obj : cc $matlabdir\extern\version\c_mexapi_version.c
+
+# Link
+build $root\vlm_C_code.mexw64 : link $builddir\vlm_C_code_data.obj $builddir\rt_nonfinite.obj $builddir\vlm_C_code_initialize.obj $builddir\vlm_C_code_terminate.obj $builddir\filiment_force.obj $builddir\cross.obj $builddir\eml_int_forloop_overflow_check.obj $builddir\repmat.obj $builddir\sum.obj $builddir\generate_AIC.obj $builddir\vortex_ring.obj $builddir\generate_rings.obj $builddir\panel_normal.obj $builddir\sumMatrixIncludeNaN.obj $builddir\indexShapeCheck.obj $builddir\induced_velocity.obj $builddir\vortex_line.obj $builddir\_coder_vlm_C_code_api.obj $builddir\_coder_vlm_C_code_mex.obj $builddir\sqrt.obj $builddir\vlm_C_code_emxutil.obj $builddir\_coder_vlm_C_code_info.obj $builddir\c_mexapi_version.obj 
