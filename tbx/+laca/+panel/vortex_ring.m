@@ -7,7 +7,7 @@ n_vert = size(coords,2);
 idx = [1:n_vert,1];
 q = zeros(3,1);
 for i = 1:n_vert
-   q = q + laGca.panel.vortex_line(coords(:,idx(i)),coords(:,idx(i+1)),p,gamma); 
+   q = q + laca.panel.vortex_line(coords(:,idx(i)),coords(:,idx(i+1)),p,gamma); 
 end
 end
 
