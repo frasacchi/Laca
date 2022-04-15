@@ -83,9 +83,18 @@ classdef Wing < matlab.mixin.Copyable
         end
         
         function plt_obj = draw(obj,varargin)
+            p = inputParser;
+            p.addParameter('PatchArgs',{})
+            p.addParameter('Rotate',eye(3))
+            p.parse(varargin{:})
             panels = obj.get_panel_coords;
+            for i = 1:size(panels,3)
+                for j = 1:4
+                    panels(j,:,i) = panels(j,:,i)*p.Results.Rotate;
+                end
+            end
             func = @(n)reshape(panels(:,n,:),4,[]);
-            plt_obj = patch(func(1),func(2),func(3),'r',varargin{:});
+            plt_obj = patch(func(1),func(2),func(3),'r',p.Results.PatchArgs{:});
         end
         
         function obj = split_sections(obj,varargin)

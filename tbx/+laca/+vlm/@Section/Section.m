@@ -5,6 +5,7 @@ classdef Section
     properties
         base_panels;
         Normalwash;
+        deform_panel = @(x)x;
     end
     
     properties
@@ -27,7 +28,7 @@ classdef Section
     
     methods
         function val = get.Panels(obj)
-           val = obj.base_panels;
+           val = obj.deform_panel(obj.base_panels);
         end
         function val = get.NPanels(obj)
            val = size(obj.base_panels,3);

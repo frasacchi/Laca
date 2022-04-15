@@ -15,7 +15,7 @@ classdef WingSection < matlab.mixin.Heterogeneous & matlab.mixin.Copyable
     properties
        ControlRefChord = [0 0];
        ControlName = '';
-       ControlDeflection = 10;
+       ControlDeflection = 0;
     end
     
     properties(Dependent = true)

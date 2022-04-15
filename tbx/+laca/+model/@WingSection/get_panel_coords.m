@@ -27,10 +27,10 @@ function coords = get_panel_coords(obj)
         coords(4,:,2) = obj.TE(1:3,1);
         
         %% rotate control surface
-            coords(3,:,2)  = coords(1,:,2) + rotateAbout(coords(3,:,2)-coords(1,:,2),...
-                coords(2,:,2)-coords(1,:,2),obj.ControlDeflection);
-            coords(4,:,2)  = coords(1,:,2) + rotateAbout(coords(4,:,2)-coords(1,:,2),...
-                coords(2,:,2)-coords(1,:,2),obj.ControlDeflection);
+            coords(3,:,2)  = coords(1,:,2) + farg.geom.rotateAbout(coords(3,:,2)'-coords(1,:,2)',...
+                coords(2,:,2)'-coords(1,:,2)',obj.ControlDeflection)';
+            coords(4,:,2)  = coords(1,:,2) + farg.geom.rotateAbout(coords(4,:,2)'-coords(1,:,2)',...
+                coords(2,:,2)'-coords(1,:,2)',obj.ControlDeflection)';
 
         %adjust the other surface
         coords(3,:,1) = mid_point_2;

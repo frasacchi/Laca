@@ -127,7 +127,7 @@ classdef Model
             
             v_i=zeros(3,obj.NPanels);
             for i = 1:obj.NPanels
-               v_i(:,i) = laca.panel.vlm_C_code('induced_velocity',...
+               v_i(:,i) = laca.vlm.vlm_C_code('induced_velocity',...
                 obj.Collocation(:,i),obj.Rings,obj.TERings,...
                 obj.TEidx,obj.Gamma);
             end
@@ -145,7 +145,7 @@ classdef Model
         end
         function obj = CombineWings(obj,idx)
             idx_to_keep = setdiff(1:length(obj.Wings),idx);
-            new_wing = laca.panel.Wing([obj.Wings(idx).Sections]);
+            new_wing = laca.vlm.Wing([obj.Wings(idx).Sections]);
             obj.Wings = [new_wing,obj.Wings(idx_to_keep)];
         end
         
@@ -185,7 +185,7 @@ classdef Model
            res = zeros(3,p.Results.iter+1);
            res(:,1) = point;
            for i = 1:p.Results.iter
-              v_i = obj.generate_AIC_mex('induced_velocity',...
+              v_i = laca.vlm.generate_AIC_mex('induced_velocity',...
                   res(:,i),obj.Rings,obj.TERings,obj.TEidx,obj.Gamma);
               res(:,i+1) = res(:,i) + ...
                   (obj.V(res(:,i))*-1+v_i).*p.Results.timeStep;
@@ -236,26 +236,6 @@ classdef Model
             end
         end        
         
-    end
-    methods(Static)
-        function obj = From_laca_model(lacaModel,minSpan,NChord,ignoreControlSurf)
-            if length(NChord) == 1
-                NChord = ones(1,length(lacaModel.Wings))*NChord;
-            end
-            wings = laca.panel.Wing.empty;
-            for i = 1:length(lacaModel.Wings)
-                wing = lacaModel.Wings(i);
-                sections = laca.panel.Section.empty;
-                for k = 1:length(wing.WingSections)
-                    sections(k) = laca.panel.Section.From_laca_section(...
-                        wing.WingSections(k),minSpan,NChord(i),...
-                        ignoreControlSurf);
-                end
-                wings(i) = laca.panel.Wing(sections);
-            end
-            obj = laca.panel.Model(wings);
-            obj.Name = lacaModel.Name;
-        end
     end
 end
 

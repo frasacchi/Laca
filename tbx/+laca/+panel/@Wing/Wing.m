@@ -167,6 +167,9 @@ classdef Wing
             end
             obj = laca.panel.Model(sections,'Name',lacaModel.Name);
         end
+        function obj = From_LE_TE(LE,TE,NChord)
+            obj = laca.panel.Section.From_LE_TE(LE,TE,NChord);
+        end
     end
 end
 
