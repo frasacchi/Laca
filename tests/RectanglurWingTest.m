@@ -8,12 +8,12 @@ figure(1);clf;model.draw;
 axis equal
 
 % convert to VLM model
-vlm_model = laca.panel.Model.From_laca_model(model,0.025,5,true);
+vlm_model = laca.vlm.Model.From_laca_model(model,0.025,5,true);
 figure(2);clf;vlm_model.draw;
 axis equal
 
 % generate VLM rings
-vlm_model = vlm_model.generate_rings();
+vlm_model = vlm_model.generate_rings([-4 0 0]');
 figure(3);clf;vlm_model.draw_rings;
 axis equal
 
@@ -21,8 +21,8 @@ axis equal
 AoA = 5;
 Beta = 0;
 V_func = fh.roty(-AoA)*fh.rotz(-Beta)*[-20 0 0]';
-vlm_model = vlm_model.generate_rings();
 V_dir = V_func./vecnorm(V_func);
+vlm_model = vlm_model.generate_rings([-4 0 0]');
 % for j = 1:size(vlm_model.TERings,3)
 %     vlm_model.TERings(3,:,j) = vlm_model.TERings(2,:,j) + V_dir' * 3;
 %     vlm_model.TERings(4,:,j) = vlm_model.TERings(1,:,j) + V_dir' * 3;
