@@ -4,8 +4,8 @@ classdef Model
     
     properties
         Wings;
-        
-        Rings;
+               
+        RingNodes;
         Normal;
         Collocation;
         
@@ -29,6 +29,7 @@ classdef Model
        NPanels
        Centroid
        Panels
+       Nodes
        PanelNormal
        StripIDs
        isTE
@@ -64,10 +65,20 @@ classdef Model
             val = [obj.Wings.Centroid];
         end
         function val = get.Panels(obj)
-            val = cat(3,obj.Wings.Panels);
+            val = cat(2,obj.Wings.Panels);
+            np = [obj.Wings.NPanels];
+            node_idx = cumsum([0,[obj.Wings.NNodes]]);
+            idx = cumsum([0,[obj.Wings.NPanels]]);
+            for i = 1:length(np)
+                val(:,idx(i)+1:idx(i+1)) = val(:,idx(i)+1:idx(i+1)) + ...
+                   repmat(node_idx(i),4,np(i));
+            end
         end
-        function val = get.PanelNormal(obj)
-            val = [obj.Wings.PanelNormal];
+        function val = get.Nodes(obj)
+            val = cat(2,obj.Wings.Nodes);
+        end
+        function val = get.Normal(obj)
+           val = [obj.Wings.Normal];
         end
         function val = get.isTE(obj)
             val = cat(1,obj.Wings.isTE);
@@ -122,13 +133,13 @@ classdef Model
             
             
             q = obj.V(obj.Collocation)+obj.V_body(obj.Collocation);
-            rhs = dot(q,obj.PanelNormal)'-q(1,:)'.*sind(obj.Normalwash);
+            rhs = dot(q,obj.Normal)'-q(1,:)'.*sind(obj.Normalwash);
             obj.Gamma = obj.AIC\rhs;   
             
             v_i=zeros(3,obj.NPanels);
             for i = 1:obj.NPanels
                v_i(:,i) = laca.vlm.vlm_C_code('induced_velocity',...
-                obj.Collocation(:,i),obj.Rings,obj.TERings,...
+                obj.Collocation(:,i),obj.Panels,obj.RingNodes,obj.TERings,...
                 obj.TEidx,obj.Gamma);
             end
             %apply gamma back onto sections
@@ -160,13 +171,14 @@ classdef Model
             p.addParameter('Rotate',eye(3))
             p.parse(varargin{:})
             clear plt_obj
-            panels = obj.Panels;
-            for i = 1:length(panels)
-                for j = 1:4
-                    panels(j,:,i) = panels(j,:,i)*p.Results.Rotate;
-                end
-            end
-            func = @(n)reshape(panels(:,n,:),4,[]);
+            nodes = p.Results.Rotate*obj.Nodes;
+%             panels = obj.Panels;
+%             for i = 1:length(panels)
+%                 for j = 1:4
+%                     panels(j,:,i) = panels(j,:,i)*p.Results.Rotate;
+%                 end
+%             end
+            func = @(n)reshape(nodes(n,obj.Panels),4,[]);
             plt_obj(1) = patch(func(1),func(2),func(3),'b',p.Results.PatchArgs{:});
 %             plt_obj(1).FaceAlpha = 0.6;
             if obj.HasResult && ~isempty(p.Results.param)
@@ -185,7 +197,7 @@ classdef Model
            res = zeros(3,p.Results.iter+1);
            res(:,1) = point;
            for i = 1:p.Results.iter
-              v_i = laca.vlm.generate_AIC_mex('induced_velocity',...
+              v_i = obj.generate_AIC_mex('induced_velocity',...
                   res(:,i),obj.Rings,obj.TERings,obj.TEidx,obj.Gamma);
               res(:,i+1) = res(:,i) + ...
                   (obj.V(res(:,i))*-1+v_i).*p.Results.timeStep;
@@ -200,12 +212,7 @@ classdef Model
             p.addParameter('DrawTE',true)
             p.parse(varargin{:})
             
-            rings = obj.Rings;
-            for i = 1:length(rings)
-                for j = 1:4
-                    rings(j,:,i) = rings(j,:,i)*p.Results.Rotate;
-                end
-            end
+            ringNodes = p.Results.Rotate*obj.RingNodes;
             
             te_rings = obj.TERings;
             for i = 1:length(te_rings)
@@ -216,8 +223,8 @@ classdef Model
             
             collocation = p.Results.Rotate*obj.Collocation;
             
-            if ~isempty(rings)
-                func = @(n)reshape(rings(:,n,:),4,[]);
+            if ~isempty(ringNodes)
+                func = @(n)reshape(ringNodes(n,obj.Panels),4,[]);
                 plt_obj(2) = patch(func(1),func(2),func(3),'b');
                 plt_obj(2).FaceAlpha = 0;
                 plt_obj(2).EdgeColor = [0 0 0];
@@ -236,6 +243,19 @@ classdef Model
             end
         end        
         
+    end
+    methods(Static)
+        function obj = From_laca_model(lacaModel,minSpan,NChord,ignoreControlSurf)
+            if length(NChord) == 1
+                NChord = ones(1,length(lacaModel.Wings))*NChord;
+            end
+            wings = laca.vlm.Wing.empty;
+            for i = 1:length(lacaModel.Wings)
+                wings(i) = laca.vlm.Wing.From_laca_wing(lacaModel.Wings(i),minSpan,NChord(i),ignoreControlSurf);
+            end
+            obj = laca.vlm.Model(wings);
+            obj.Name = lacaModel.Name;
+        end
     end
 end
 

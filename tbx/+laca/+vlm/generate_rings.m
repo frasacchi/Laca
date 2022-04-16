@@ -1,38 +1,35 @@
-function [Rings,Normal,Collocation,TERings,TEidx] = generate_rings(panels,isTE)
+function [RingNodes,Normal,Collocation,TERings,TEidx] = generate_rings(panels,nodes,isTE,dir)
 %GENERATE_RINGS Summary of this function goes here
 %   Detailed explanation goes here
-N = size(panels,3);
-Rings = zeros(4,3,N);
-Collocation = zeros(3,N);
 
+N = size(panels,2);
+RingNodes = zeros(3,size(nodes,2));
+Collocation = zeros(3,N);
 for i = 1:N
-    A = panels(1,:,i);
-    B = panels(2,:,i);
-    AD = panels(4,:,i)-A;
-    BC = panels(3,:,i)-B;
+    A = nodes(:,panels(1,i));
+    B = nodes(:,panels(2,i));
+    AD = nodes(:,panels(4,i))-A;
+    BC = nodes(:,panels(3,i))-B;
     
-    Rings(1,:,i) = panels(1,:,i) + 0.25*AD;
-    Rings(2,:,i) = panels(2,:,i) + 0.25*BC;
-    Rings(3,:,i) = panels(2,:,i) + 1.25*BC;
-    Rings(4,:,i) = panels(1,:,i) + 1.25*AD;
+    RingNodes(:,panels(1,i)) = A + 0.25*AD;
+    RingNodes(:,panels(2,i)) = B + 0.25*BC;
+    RingNodes(:,panels(3,i)) = B + 1.25*BC;
+    RingNodes(:,panels(4,i)) = A + 1.25*AD;
     
-    Collocation(:,i) = ((panels(1,:,i) + 0.75*AD) + (panels(2,:,i) + 0.75*BC))./2';    
+    Collocation(:,i) = ((A + 0.75*AD) + (B + 0.75*BC))./2';    
 end
-Normal = laca.vlm.panel_normal(Rings);
+Normal = laca.vlm.panel_normal(panels,RingNodes);
 idx_te = find(isTE);
 N_te = length(idx_te);
 
 TERings = zeros(4,3,N_te);
 TEidx = [(1:N_te)',idx_te];
 
-panel_dir = panels(4,1,1)-panels(1,1,1);
-panel_dir = panel_dir/abs(panel_dir);
-
 for i = 1:N_te
-    TERings(1,:,i) = Rings(4,:,idx_te(i));
-    TERings(2,:,i) = Rings(3,:,idx_te(i));
-    TERings(3,:,i) = Rings(3,:,idx_te(i))+[20 0 0].*panel_dir;
-    TERings(4,:,i) = Rings(4,:,idx_te(i))+[20 0 0].*panel_dir;
+    TERings(1,:,i) = RingNodes(:,panels(4,idx_te(i)));
+    TERings(2,:,i) = RingNodes(:,panels(3,idx_te(i)));
+    TERings(3,:,i) = TERings(2,:,i)+dir';
+    TERings(4,:,i) = TERings(1,:,i)+dir';
 end
 
 end

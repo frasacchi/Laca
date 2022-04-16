@@ -1,10 +1,10 @@
-function AIC = generate_AIC(rings,collocation,normal,te_rings,te_idx)
+function AIC = generate_AIC(panels,ringNodes,collocation,normal,te_rings,te_idx)
 %GENERATE_AIC Summary of this function goes here
 %   Detailed explanation goes here
-N = size(rings,3);
+N = size(panels,2);
 AIC = zeros(N);
 for j = 1:N
-    coords = rings(:,:,j)';
+    coords = ringNodes(:,panels(:,j));
     for i = 1:N
         v = laca.vlm.vortex_ring(coords,collocation(:,i),1);
         AIC(i,j) = dot(v,normal(:,i));

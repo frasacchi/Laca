@@ -1,10 +1,11 @@
-function V = induced_velocity(point,rings,te_rings,te_idx,gamma)
+function V = induced_velocity(point,panels,ringNodes,te_rings,te_idx,gamma)
 %GENERATE_AIC Summary of this function goes here
 %   Detailed explanation goes here
-N = size(rings,3);
+
+N = size(panels,2);
 V = zeros(3,1);
 for i = 1:N
-    coords = rings(:,:,i)';
+    coords = ringNodes(:,panels(:,i));
     V = V + laca.vlm.vortex_ring(coords,point,gamma(i));
 end
 
