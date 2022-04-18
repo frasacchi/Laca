@@ -215,7 +215,7 @@ classdef Model
             ringNodes = p.Results.Rotate*obj.RingNodes;
             
             te_rings = obj.TERings;
-            for i = 1:length(te_rings)
+            for i = 1:size(te_rings,3)
                 for j = 1:4
                     te_rings(j,:,i) = te_rings(j,:,i)*p.Results.Rotate;
                 end
