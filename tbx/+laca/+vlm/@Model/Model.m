@@ -9,6 +9,7 @@ classdef Model
         Normal;
         Collocation;
         
+        TENodes;
         TERings;
         TEidx;
         
@@ -140,7 +141,7 @@ classdef Model
             for i = 1:obj.NPanels
                v_i(:,i) = laca.vlm.vlm_C_code('induced_velocity',...
                 obj.Collocation(:,i),obj.Panels,obj.RingNodes,obj.TERings,...
-                obj.TEidx,obj.Gamma);
+                obj.TENodes,obj.TEidx,obj.Gamma);
             end
             %apply gamma back onto sections
             idx = 1;
@@ -213,13 +214,7 @@ classdef Model
             p.parse(varargin{:})
             
             ringNodes = p.Results.Rotate*obj.RingNodes;
-            
-            te_rings = obj.TERings;
-            for i = 1:size(te_rings,3)
-                for j = 1:4
-                    te_rings(j,:,i) = te_rings(j,:,i)*p.Results.Rotate;
-                end
-            end
+            teNodes = p.Results.Rotate*obj.TENodes;
             
             collocation = p.Results.Rotate*obj.Collocation;
             
@@ -231,7 +226,7 @@ classdef Model
                 plt_obj(2).LineWidth = 2;
                 
                 if p.Results.DrawTE
-                    func = @(n)reshape(te_rings(:,n,:),4,[]);
+                    func = @(n)reshape(teNodes(n,obj.TERings),4,[]);
                     plt_obj(3) = patch(func(1),func(2),func(3),'--');
                     plt_obj(3).FaceAlpha = 0;
                     plt_obj(3).EdgeColor = [0 0 0];

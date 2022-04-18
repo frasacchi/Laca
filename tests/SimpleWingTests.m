@@ -13,7 +13,8 @@ figure(2);clf;vlm_model.draw;
 axis equal
 
 % generate VLM rings
-vlm_model = vlm_model.generate_rings([-2 0 0]');
+vlm_model = vlm_model.generate_rings();
+vlm_model = vlm_model.generate_te_horseshoe([-2 0 0]');
 figure(3);clf;vlm_model.draw_rings;
 axis equal
 
@@ -22,7 +23,7 @@ AoA = rad2deg(0.2);
 Beta = 0;
 V_func = fh.roty(-AoA)*fh.rotz(-Beta)*[-1 0 0]';
 V_dir = V_func./vecnorm(V_func);
-vlm_model = vlm_model.generate_rings(V_dir.*[-2 0 0]');
+vlm_model = vlm_model.generate_te_horseshoe(V_dir.*[-2 0 0]');
 vlm_model = vlm_model.generate_AIC();
 vlm_model = vlm_model.solve(V_func,1.225);
 Wrench = vlm_model.get_forces_and_moments([-0.08*0.25,0,0]');

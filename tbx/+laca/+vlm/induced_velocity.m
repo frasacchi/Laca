@@ -1,4 +1,4 @@
-function V = induced_velocity(point,panels,ringNodes,te_rings,te_idx,gamma)
+function V = induced_velocity(point,panels,ringNodes,teRings,teNodes,te_idx,gamma)
 %GENERATE_AIC Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -12,7 +12,7 @@ end
 %compute influence of wake panels
 for i = 1:size(te_idx,1)
     idx = te_idx(i,2);
-    coords = te_rings(:,:,i)';
+    coords = teNodes(:,teRings(:,i))';
     V = V + laca.vlm.vortex_ring(coords,point,gamma(idx));
 end
 end

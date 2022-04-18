@@ -1,4 +1,4 @@
-function [RingNodes,Normal,Collocation,TERings,TEidx] = generate_rings(panels,nodes,isTE,dir)
+function [RingNodes,Normal,Collocation] = generate_rings(panels,nodes)
 %GENERATE_RINGS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -19,18 +19,5 @@ for i = 1:N
     Collocation(:,i) = ((A + 0.75*AD) + (B + 0.75*BC))./2';    
 end
 Normal = laca.vlm.panel_normal(panels,RingNodes);
-idx_te = find(isTE);
-N_te = length(idx_te);
-
-TERings = zeros(4,3,N_te);
-TEidx = [(1:N_te)',idx_te];
-
-for i = 1:N_te
-    TERings(1,:,i) = RingNodes(:,panels(4,idx_te(i)));
-    TERings(2,:,i) = RingNodes(:,panels(3,idx_te(i)));
-    TERings(3,:,i) = TERings(2,:,i)+dir';
-    TERings(4,:,i) = TERings(1,:,i)+dir';
-end
-
 end
 
