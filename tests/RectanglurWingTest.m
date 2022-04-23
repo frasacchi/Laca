@@ -1,7 +1,20 @@
+% this test generates a rectagular wing which is used to check:
+% - vlm result generates correct Lift
+%
+% wing properties are
+% - Span = 1m
+% - Chord = 0.1m
+% - Spanwise Panels = 40
+% - Chordwise Panels = 5
+%
+% author: Fintan healy      Date: 19/04/2022
+% email: fintan.healy@bristol.ac.uk
+
 % generate a rectangular wing model
+
 LE = [0 0 0;0 0.25 0.5;0 0 0];
 TE = LE;
-TE(1,:) = -0.08;
+TE(1,:) = -0.1;
 wing = laca.model.Wing.From_RHS_LE_TE(LE,TE,[]);
 model = laca.model.Aircraft(wing);
 figure(1);clf;model.draw;
@@ -13,8 +26,8 @@ figure(2);clf;vlm_model.draw;
 axis equal
 
 % generate VLM rings
-vlm_model = vlm_model.generate_rings();
-vlm_model = vlm_model.generate_te_horseshoe([-0.5 0 0]');
+vlm_model.generate_rings();
+vlm_model.generate_te_horseshoe([-0.5 0 0]');
 figure(3);clf;vlm_model.draw_rings;
 axis equal
 
@@ -23,17 +36,21 @@ AoA = 5;
 Beta = 0;
 V_func = fh.roty(-AoA)*fh.rotz(-Beta)*[-20 0 0]';
 V_dir = V_func./vecnorm(V_func);
-vlm_model = vlm_model.generate_rings();
-vlm_model = vlm_model.generate_te_horseshoe([-0.5 0 0]');
-% for j = 1:size(vlm_model.TERings,3)
-%     vlm_model.TERings(3,:,j) = vlm_model.TERings(2,:,j) + V_dir' * 3;
-%     vlm_model.TERings(4,:,j) = vlm_model.TERings(1,:,j) + V_dir' * 3;
-% end
-vlm_model = vlm_model.generate_AIC();
-vlm_model = vlm_model.solve(V_func,1.225);
+vlm_model.generate_rings();
+vlm_model.set_panel_filiments();
+vlm_model.generate_te_horseshoe(V_dir*5);
+
+vlm_model.generate_AIC3D();
+vlm_model.solve(V_func);
+vlm_model.apply_result_katz(1.225);
 Wrench = vlm_model.get_forces_and_moments([-0.08*0.25,0,0]');
 F = (fh.roty(-AoA)*fh.rotz(-Beta))'*Wrench(1:3);
-L= F(3);
+L_katz= F(3);
+
+vlm_model.apply_result_ring(1.225);
+Wrench = vlm_model.get_forces_and_moments([-0.08*0.25,0,0]');
+F = (fh.roty(-AoA)*fh.rotz(-Beta))'*Wrench(1:3);
+L_fil= F(3);
 
 f = figure(4);clf;
 vlm_model.draw('param','P');
@@ -41,42 +58,15 @@ f.CurrentAxes.ZDir = 'Reverse';
 ax = gca;
 ax.Clipping = 'off';
 axis equal
+
+
+%% ensure correct lift generated (Katz)
 tol = 1e-2;
-% assert(abs(L-8.7302)<tol,'Incorrect Lift')
+assert(abs(L_katz--10.401)<tol,'Incorrect Lift')
 
-
-
-% run 
-% AoAs = -5:5;
-% Ls = zeros(size(AoAs));
-% Ms = zeros(size(AoAs));
-% %solve
-% for i = 1:length(AoAs)
-% AoA = AoAs(i);
-% Beta = 0;
-% V_func = fh.roty(-AoA)*fh.rotz(-Beta)*[-20 0 0]';
-% vlm_model = vlm_model.generate_rings();
-% V_dir = V_func./vecnorm(V_func);
-% % for j = 1:size(vlm_model.TERings,3)
-% %     vlm_model.TERings(3,:,j) = vlm_model.TERings(2,:,j) + V_dir' * 3;
-% %     vlm_model.TERings(4,:,j) = vlm_model.TERings(1,:,j) + V_dir' * 3;
-% % end
-% vlm_model = vlm_model.generate_AIC();
-% vlm_model = vlm_model.solve(V_func,1.225);
-% Wrench = vlm_model.get_forces_and_moments([-0.08*0.25,0,0]');
-% F = (fh.roty(-AoA)*fh.rotz(-Beta))'*Wrench(1:3);
-% Ls(i) = F(3);
-% Ms(i) = Wrench(5);
-% end
-% f = figure(4);clf;
-% vlm_model.draw('param','P')
-% f.CurrentAxes.ZDir = 'Reverse';
-% ax = gca;
-% ax.Clipping = 'off';
-% axis equal
-% 
-% f = figure(5);hold on;%clf;
-% plot(AoAs,Ls);
+%% ensure correct lift generated (Filiment)
+tol = 1e-2;
+assert(abs(L_katz--10.549)<tol,'Incorrect Lift')
 
 
 
