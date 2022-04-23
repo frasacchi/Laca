@@ -27,11 +27,11 @@ else
     controlSurface = laca.vlm.ControlSurface.None;
 end
 
-LE = wingSection.LE;
+LE = wingSection.LE_hid;
 LE_dir = LE(:,2)-LE(:,1);
 LEs = repmat(LE(:,1),1,NSpan + 1) + repmat(span_eta,3,1).*repmat(LE_dir,1,NSpan+1);
 
-TE = wingSection.TE;
+TE = wingSection.TE_hid;
 TE_dir = TE(:,2)-TE(:,1);
 TEs = repmat(TE(:,1),1,NSpan + 1) + repmat(span_eta,3,1).*repmat(TE_dir,1,NSpan+1);
 
@@ -40,5 +40,7 @@ normalwash_grad = wingSection.Normalwash(2)-wingSection.Normalwash(1);
 obj = laca.vlm.Section.From_LE_TE(LEs,TEs,chord_eta_LHS,chord_eta_RHS,...
     span_eta.*normalwash_grad + wingSection.Normalwash(1),controlSurface);
 obj.Name = wingSection.Name;
+obj.R = wingSection.R;
+obj.Rot = wingSection.Rot;
 end
 

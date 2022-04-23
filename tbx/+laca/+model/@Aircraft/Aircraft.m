@@ -15,10 +15,8 @@ classdef Aircraft < matlab.mixin.Copyable
         function obj = Rotate(obj,mat)
             for i = 1:length(obj.Wings)
                for j = 1:length(obj.Wings(i).WingSections)
-                   obj.Wings(i).WingSections(j).LE = mat * ...
-                       obj.Wings(i).WingSections(j).LE;
-                   obj.Wings(i).WingSections(j).TE = mat * ...
-                       obj.Wings(i).WingSections(j).TE;
+                   obj.Wings(i).WingSections(j).R = mat*obj.Wings(i).WingSections(j).R;
+                   obj.Wings(i).WingSections(j).Rot = mat*obj.Wings(i).WingSections(j).Rot;
                end
             end
         end

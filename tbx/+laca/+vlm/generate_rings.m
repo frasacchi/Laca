@@ -5,6 +5,7 @@ function [RingNodes,Normal,Collocation] = generate_rings(panels,nodes)
 N = size(panels,2);
 RingNodes = zeros(3,size(nodes,2));
 Collocation = zeros(3,N);
+Centroid = zeros(3,N);
 for i = 1:N
     A = nodes(:,panels(1,i));
     B = nodes(:,panels(2,i));

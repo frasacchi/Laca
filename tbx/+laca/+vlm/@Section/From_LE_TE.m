@@ -37,6 +37,7 @@ for j = 1:NChord+1
     nodes(:,start_idx:end_idx) = LE + dir.*repmat(chord_eta(j,:),3,1);
     if j>NChord-controlSurface.NControl+1
         controlSurface.Nodes = [controlSurface.Nodes,start_idx:end_idx];
+        controlSurface.Panels = [controlSurface.Panels,(NSpan*(j-2) + 1):(NSpan*(j-1))];
     end
 end
 

@@ -1,4 +1,4 @@
-classdef ControlSurface
+classdef ControlSurface < laca.vlm.Base
     %CONTROLSURFACE Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -8,6 +8,7 @@ classdef ControlSurface
         Side = laca.vlm.Side.Starboard;
         HingeNodes = [];
         Nodes = [];
+        Panels = [];
         NControl;
         Idx = 0;
         Deflection = 0;
