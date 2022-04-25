@@ -202,8 +202,11 @@ classdef Model < laca.vlm.Base
             else
                 obj.V_col = obj.V(obj.Collocation);
             end
-            rhs = dot(obj.V_col,obj.Normal)'-obj.V_col(1,:)'.*sind(obj.Normalwash);
-            obj.Gamma = obj.AIC\rhs;
+%             if obj.useMEX
+%                 obj.Gamma = laca.vlm.vlm_C_code('get_gamma',obj.V_col,obj.Normal,obj.Normalwash,obj.AIC);
+%             else
+                obj.Gamma = laca.vlm.get_gamma(obj.V_col,obj.Normal,obj.Normalwash,obj.AIC);
+%             end
         end
         function obj = Stitch(obj)
             obj.Wings = arrayfun(@(x)x.Stitch,obj.Wings);

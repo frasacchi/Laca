@@ -66,7 +66,7 @@ assert(abs(L_katz--10.401)<tol,'Incorrect Lift')
 
 %% ensure correct lift generated (Filiment)
 tol = 1e-2;
-assert(abs(L_katz--10.549)<tol,'Incorrect Lift')
+assert(abs(L_fil--10.549)<tol,'Incorrect Lift')
 
 
 

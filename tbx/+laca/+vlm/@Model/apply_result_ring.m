@@ -5,15 +5,11 @@ end
 Vi = pagemtimes(obj.AIC3D,obj.Gamma);
 obj.V_i = reshape(Vi,[],3)' + obj.V_col;
 if obj.useMEX
-    obj.Filiment_Force = laca.vlm.vlm_C_code('ring_force',obj.Panels,obj.Nodes,...
-        obj.V_i,obj.Gamma,obj.isTE,rho);
+    [obj.Filiment_Force,Fs] = laca.vlm.vlm_C_code('ring_force',obj.Panels,obj.Nodes,...
+        obj.Panel_Filiments,obj.V_i,obj.Gamma,obj.isTE,rho);
 else
-    obj.Filiment_Force = laca.vlm.ring_force(obj.Panels,obj.Nodes,...
-        obj.V_i,obj.Gamma,obj.isTE,rho);
-end
-Fs = zeros(3,size(obj.Panels,2));
-for i = 1:obj.NPanels
-    Fs(:,i) = sum(obj.Filiment_Force(:,obj.Panel_Filiments(:,i)),2);
+    [obj.Filiment_Force,obj.Fs] = laca.vlm.ring_force(obj.Panels,obj.Nodes,...
+        obj.Panel_Filiments,obj.V_i,obj.Gamma,obj.isTE,rho);
 end
 idx = 1;
 for i = 1:length(obj.Wings)

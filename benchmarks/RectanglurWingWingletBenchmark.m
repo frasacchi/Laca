@@ -16,7 +16,7 @@ display_system_info;                % show system info
 show_result('',[],[],false,true);   % plot headers
 
 show_plots = true;
-nIters = 10;
+nIters = 300;
 
 
 %% generate the LACA Model

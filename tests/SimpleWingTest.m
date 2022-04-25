@@ -74,7 +74,7 @@ assert(max(abs(vlm_model.AIC*1e3 - test_AIC),[],'all')<1e-4,'Incorrect AIC Matri
 assert(max(abs(vlm_model.Gamma - test_Gamma),[],'all')<1e-4,'Incorrect Gamma Matrix')
 
 %% Check Total Lift produced
-assert(abs(L--3.669)<tol,'Incorrect Lift')
+assert(abs(L--3.7415)<tol,'Incorrect Lift')
 
 
 

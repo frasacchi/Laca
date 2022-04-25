@@ -2,7 +2,7 @@ classdef Section < laca.vlm.Base
     %MODEL Summary of this class goes here
     %   Detailed explanation goes here
 
-    properties(SetAccess = protected)
+    properties
         Vbody_func = @(U,X)zeros(size(X));
     end
         properties(GetAccess = protected)
@@ -184,7 +184,7 @@ classdef Section < laca.vlm.Base
         function val = get.Normal(obj)
 %             if isempty(obj.Normal_cache)
                 val = obj.base_normal;
-                val = obj.Rot*val + repmat(obj.R,1,size(val,2));
+                val = obj.Rot*val;
                 obj.Normal_cache = val;
 %             else
 %                 val = obj.Normal_cache;
@@ -245,13 +245,13 @@ classdef Section < laca.vlm.Base
             obj.Gamma = gamma;
             obj.V = V;
             obj.F = Fs;
-            if obj.useMEX
-                [obj.N,obj.D,obj.S,obj.L,obj.P,obj.Lprime,obj.Cp,obj.Cl,obj.Cd]...
-                    = laca.vlm.vlm_C_code('apply_result',Fs,V(obj.Centroid),obj.Normal,obj.Area,rho);
-            else
+%             if obj.useMEX
+%                 [obj.N,obj.D,obj.S,obj.L,obj.P,obj.Lprime,obj.Cp,obj.Cl,obj.Cd]...
+%                     = laca.vlm.vlm_C_code('apply_result',Fs,V(obj.Centroid),obj.Normal,obj.Area,rho);
+%             else
                 [obj.N,obj.D,obj.S,obj.L,obj.P,obj.Lprime,obj.Cp,obj.Cl,obj.Cd]...
                     = laca.vlm.apply_result(Fs,V(obj.Centroid),obj.Normal,obj.Area,rho);
-            end
+%             end
         end
     end
     methods(Static)
