@@ -2,8 +2,10 @@ classdef Wing < laca.vlm.Base
     %MODEL Summary of this class goes here
     %   Detailed explanation goes here
 
-    properties%(SetAccess = protected,GetAccess=public)        
-%         ControlSurfaces;
+    properties       
+        Filiment_Force;
+        Filiment_Position;
+        Panel_Filiments;
     end
     properties(SetAccess = immutable)
         NPanels;
@@ -14,6 +16,7 @@ classdef Wing < laca.vlm.Base
         Panels_cache;
     end
     properties(Dependent)
+        dC_l_dalpha
         Centroid
         Normal
         Panels
@@ -108,6 +111,9 @@ classdef Wing < laca.vlm.Base
         end
         function val = get.F(obj)
             val = cat(2,obj.Sections.F);
+        end
+        function val = get.dC_l_dalpha(obj)
+            val = cat(1,obj.Sections.dC_l_dalpha);
         end
         function val = get.Gamma(obj)
             val = cat(1,obj.Sections.Gamma);

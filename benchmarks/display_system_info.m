@@ -67,11 +67,11 @@ if isdeployed
     miscStr = [miscStr ' DEPLOYED'];
 end
 %fprintf('Arch: %-8s  Release: %-s  %s\n', computer, ['R' version('-release')], miscStr);
-if is_octave
-  appName = 'Octave';
-else
+% if is_octave
+%   appName = 'Octave';
+% else
   appName = 'Matlab';
-end
+% end
 out.OsDescr = osDescr;
 out.CpuDescr = cpuDescr;
 out.MemSizeGB = memSizeGB;

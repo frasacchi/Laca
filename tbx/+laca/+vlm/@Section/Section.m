@@ -3,6 +3,9 @@ classdef Section < laca.vlm.Base
     %   Detailed explanation goes here
 
     properties
+        Filiment_Force;
+        Filiment_Position;
+        Panel_Filiments;
         Vbody_func = @(U,X)zeros(size(X));
     end
         properties(GetAccess = protected)
@@ -16,7 +19,7 @@ classdef Section < laca.vlm.Base
     properties(SetAccess = immutable)
         base_nodes;
         base_ringNodes;
-        base_collocation;
+%         base_collocation;
         base_centroid;
         base_normal;
         Panels;
@@ -30,6 +33,7 @@ classdef Section < laca.vlm.Base
     end
 
     properties
+        dC_l_dalpha;
         Normalwash;
         Connectivity;
         Name = '';
@@ -99,7 +103,7 @@ classdef Section < laca.vlm.Base
 %             obj.Midpoint_cache = [];
 %             obj.Normal_cache = [];
 %             obj.RingNodes_cache = [];
-            obj.Collocation_cache = [];
+%             obj.Collocation_cache = [];
         end
     end
 
@@ -121,7 +125,8 @@ classdef Section < laca.vlm.Base
 
     methods
         function val = Vbody(obj,U)
-            val = obj.Vbody_func(U,obj.NodesLocal(obj.base_collocation));
+            local_col = laca.vlm.vlm_C_code('get_collocation',obj.Panels,obj.NodesLocal(obj.base_nodes),obj.dC_l_dalpha);
+            val = obj.Vbody_func(U,local_col);
         end
         function val = get.Nodes(obj)
 %             if isempty(obj.Nodes_cache)
@@ -143,8 +148,11 @@ classdef Section < laca.vlm.Base
 %             end
         end
         function val = get.Collocation(obj)
-            if isempty(obj.Collocation_cache)
-            val = obj.base_collocation;
+            if obj.useMEX
+                val = laca.vlm.vlm_C_code('get_collocation',obj.Panels,obj.Nodes,obj.dC_l_dalpha);
+            else
+                val = laca.vlm.get_collocation(obj.Panels,obj.Nodes,obj.dC_l_dalpha);
+            end
             for i = 1:length(obj.ControlSurfaces)
                 if ~strcmp(obj.ControlSurfaces.Name,'None') && obj.ControlSurfaces.Deflection ~= 0
                     h_nodes = obj.ControlSurfaces(i).HingeNodes;
@@ -156,12 +164,28 @@ classdef Section < laca.vlm.Base
                         obj.ControlSurfaces.Deflection);
                 end
             end
-            val = obj.Rot*val + repmat(obj.R,1,size(val,2));
-            obj.Collocation_cache = val;
-            else
-                val = obj.Collocation_cache;
-            end
+%             val = obj.Rot*val + repmat(obj.R,1,size(val,2));
         end
+%         function val = get.Collocation(obj)
+%             if isempty(obj.Collocation_cache)
+%             val = obj.base_collocation;
+%             for i = 1:length(obj.ControlSurfaces)
+%                 if ~strcmp(obj.ControlSurfaces.Name,'None') && obj.ControlSurfaces.Deflection ~= 0
+%                     h_nodes = obj.ControlSurfaces(i).HingeNodes;
+%                     hinge = obj.base_nodes(:,h_nodes(2))-obj.base_nodes(:,h_nodes(1));
+%                     cs_nodes = obj.ControlSurfaces.Panels;
+%                     origin = repmat(obj.base_nodes(:,h_nodes(1)),1,length(cs_nodes));
+%                     val(:,cs_nodes) = origin + farg.geom.rotateAbout(...
+%                         val(:,cs_nodes)-origin,repmat(hinge,1,length(cs_nodes)),...
+%                         obj.ControlSurfaces.Deflection);
+%                 end
+%             end
+%             val = obj.Rot*val + repmat(obj.R,1,size(val,2));
+%             obj.Collocation_cache = val;
+%             else
+%                 val = obj.Collocation_cache;
+%             end
+%         end
         function val = get.Centroid(obj)
 %             if isempty(obj.Centroid_cache)
                 val = obj.base_centroid;
@@ -200,6 +224,7 @@ classdef Section < laca.vlm.Base
             obj.Connectivity = Connectivity;
             obj.NPanels = size(Panels,2);
             obj.NNodes =  size(Nodes,2);
+            obj.dC_l_dalpha = 2*pi*ones(obj.NPanels,1);
 
             N = reshape(sum(reshape(Nodes(:,Panels(1:2,:)),3,2,[]),2),3,[])./2;
             S = reshape(sum(reshape(Nodes(:,Panels(3:4,:)),3,2,[]),2),3,[])./2;
@@ -211,12 +236,12 @@ classdef Section < laca.vlm.Base
             obj.base_centroid = (N+S)./2;
 
             if obj.useMEX
-                [obj.base_ringNodes,~,obj.base_collocation] = ...
+                [obj.base_ringNodes,~,~] = ...
                     laca.vlm.vlm_C_code('generate_rings',Panels,Nodes);
                 obj.Area = laca.vlm.vlm_C_code('panel_area',Panels,Nodes);
                 obj.base_normal = laca.vlm.vlm_C_code('panel_normal',Panels,Nodes);
             else
-                [obj.base_ringNodes,~,obj.base_collocation] = ...
+                [obj.base_ringNodes,~,~] = ...
                     laca.vlm.generate_rings(Panels,Nodes);
                 obj.Area = laca.vlm.panel_area(Panels,Nodes);
                 obj.base_normal = laca.vlm.panel_normal(Panels,Nodes);

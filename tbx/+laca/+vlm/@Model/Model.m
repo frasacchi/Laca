@@ -28,8 +28,7 @@ classdef Model < laca.vlm.Base
         Wings;
     end
     properties
-        Filiment_Neighbours = 15;
-        Filiment_delta = 1e-6;
+        Filiment_tol = 0.2;
     end
 
     properties(NonCopyable)
@@ -37,6 +36,7 @@ classdef Model < laca.vlm.Base
     end
 
     properties(Dependent)
+        dC_l_dalpha
         NPanels
         Centroid
         Panels
@@ -124,6 +124,9 @@ classdef Model < laca.vlm.Base
         function val = get.Area(obj)
             val = cat(1,obj.Wings.Area);
         end
+        function val = get.dC_l_dalpha(obj)
+            val = cat(1,obj.Wings.dC_l_dalpha);
+        end
     end
 
     methods
@@ -164,11 +167,11 @@ classdef Model < laca.vlm.Base
             if obj.useMEX
                 [obj.Filiment_Position,obj.Panel_Filiments] = ...
                     laca.vlm.vlm_C_code('get_perimeter_filiments',...
-                    obj.Panels,obj.RingNodes,obj.Filiment_Neighbours,obj.Collocation,obj.Filiment_delta);
+                    obj.Panels,obj.RingNodes,obj.Filiment_tol,obj.isTE);
             else
                 [obj.Filiment_Position,obj.Panel_Filiments] = ...
                     laca.vlm.get_perimeter_filiments(...
-                    obj.Panels,obj.RingNodes,obj.Filiment_Neighbours,obj.Collocation,obj.Filiment_delta);
+                    obj.Panels,obj.RingNodes,obj.Filiment_tol,obj.isTE);
             end
         end
 
@@ -202,11 +205,11 @@ classdef Model < laca.vlm.Base
             else
                 obj.V_col = obj.V(obj.Collocation);
             end
-%             if obj.useMEX
-%                 obj.Gamma = laca.vlm.vlm_C_code('get_gamma',obj.V_col,obj.Normal,obj.Normalwash,obj.AIC);
-%             else
+            if obj.useMEX
+                obj.Gamma = laca.vlm.vlm_C_code('get_gamma',obj.V_col,obj.Normal,obj.Normalwash,obj.AIC);
+            else
                 obj.Gamma = laca.vlm.get_gamma(obj.V_col,obj.Normal,obj.Normalwash,obj.AIC);
-%             end
+            end
         end
         function obj = Stitch(obj)
             obj.Wings = arrayfun(@(x)x.Stitch,obj.Wings);

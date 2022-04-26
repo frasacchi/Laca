@@ -59,9 +59,9 @@ axis equal
 
 %% check number of filiment summing on each panel (Nchord = 1)
 pos = full(sum(vlm_model.Panel_Filiments));
-assert(all(abs(pos-[5 6 6 5])<1e-2))
+assert(all(abs(pos-[4 5 5 4])<1e-2))
 
 %% check number of filiment summing on each panel (Nchord = 3)
 pos = full(sum(vlm_model_2.Panel_Filiments));
-assert(all(abs(pos-[6 7 7 8 6 7 7 6 8 7 7 6])<1e-2))
+assert(all(abs(pos-[6 7 7 8 5 6 7 6 8 7 6 5])<1e-2))
 
