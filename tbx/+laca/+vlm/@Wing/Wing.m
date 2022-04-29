@@ -41,21 +41,27 @@ classdef Wing < laca.vlm.Base
         Cp;
         Cl;
         Cd;
+        PanelChord;
+        PanelSpan;
+        Connectivity;
     end
     % results
     properties
         useMEX = true;
         Name = '';
         HasResult = false;
-        PanelChord;
-        PanelSpan;
-        Connectivity;
+        
     end
-    methods (Access = protected)
-      function cp = copyElement(obj)
+    methods
+      function cp = copy(obj)
          % Shallow copy object
-         cp = copyElement@matlab.mixin.Copyable(obj);
-         cp.Sections = [obj.Sections.copy()];
+         cp = laca.vlm.Wing(arrayfun(@(x)x.copy,[obj.Sections]));
+         cp.useMEX = obj.useMEX;
+         cp.HasResult = obj.HasResult;
+         cp.Name = obj.Name;
+         cp.Filiment_Force = obj.Filiment_Force;
+         cp.Filiment_Position = obj.Filiment_Position;
+         cp.Panel_Filiments = obj.Panel_Filiments;
       end
    end
 
@@ -210,7 +216,7 @@ classdef Wing < laca.vlm.Base
     % apply results
     methods
         function obj = apply_result_katz(obj,gamma,V,rho)
-            Lift = obj.Lift_katz(gamma,V,rho);
+            Lift = -obj.Lift_katz(gamma,V,rho);
             idx = 1;
             for i = 1:length(obj.Sections)
                 pN = obj.Sections(i).NPanels;
@@ -220,16 +226,16 @@ classdef Wing < laca.vlm.Base
                 idx = idx + pN;
             end
         end
-        function obj = apply_result_filiment(obj,gamma,Fs,V,rho)
-            idx = 1;
-            for i = 1:length(obj.Sections)
-                pN = obj.Sections(i).NPanels;
-                obj.Sections(i) = obj.Sections(i).apply_result(...
-                    gamma(idx:idx+pN-1),...
-                    Fs(:,idx:idx+pN-1),V,rho);
-                idx = idx + pN;
-            end
-        end
+%         function obj = apply_result_filiment(obj,gamma,Fs,V,rho)
+%             idx = 1;
+%             for i = 1:length(obj.Sections)
+%                 pN = obj.Sections(i).NPanels;
+%                 obj.Sections(i) = obj.Sections(i).apply_result(...
+%                     gamma(idx:idx+pN-1),...
+%                     Fs(:,idx:idx+pN-1),V,rho);
+%                 idx = idx + pN;
+%             end
+%         end
         function L = Lift_katz(obj,gamma,V,rho)
             Vs = V(obj.Centroid);
             L = rho .* vecnorm(Vs)' .* obj.PanelSpan;

@@ -16,11 +16,11 @@ end
 
 obj.V_i = obj.V_i + obj.V_col;
 if obj.useMEX
-    obj.Filiment_Force = laca.vlm.vlm_C_code('filiment_force',obj.Panels,obj.Nodes,...
-        obj.V_i,obj.Gamma,obj.isTE,rho);
+    [obj.Filiment_Force,Fs] = laca.vlm.vlm_C_code('ring_force',obj.Panels,obj.Nodes,...
+        obj.Panel_Filiments,obj.V_i,obj.Gamma,obj.isTE,rho);
 else
-    obj.Filiment_Force = laca.vlm.filiment_force(obj.Panels,obj.Nodes,...
-        obj.V_i,obj.Gamma,obj.isTE,rho);
+    [obj.Filiment_Force,Fs] = laca.vlm.ring_force(obj.Panels,obj.Nodes,...
+        obj.Panel_Filiments,obj.V_i,obj.Gamma,obj.isTE,rho);
 end
 Fs = zeros(3,size(obj.Panels,2));
 for i = 1:obj.NPanels
@@ -29,8 +29,10 @@ end
 idx = 1;
 for i = 1:length(obj.Wings)
     N = obj.Wings(i).NPanels;
-    obj.Wings(i) = obj.Wings(i).apply_result_filiment(...
-        obj.Gamma(idx:idx+N-1),-Fs(:,idx:idx+N-1),obj.V,rho);
+    p_idx = ((idx-1)*4+1):((idx-1+N)*4);
+    obj.Wings(i).apply_result_filiment(...
+        obj.Gamma(idx:idx+N-1),Fs(:,idx:idx+N-1),...
+        obj.Filiment_Force(:,p_idx),obj.V,rho);
     idx = idx + N;
 end
 obj.HasKatzResult = false;

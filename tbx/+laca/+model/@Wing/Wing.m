@@ -1,4 +1,4 @@
-classdef Wing < matlab.mixin.Copyable
+classdef Wing < handle
     %WING Summary of this class goes here
     %   Detailed explanation goes here
 
@@ -24,6 +24,15 @@ classdef Wing < matlab.mixin.Copyable
         Span;
         Rot;
         R;
+    end
+
+    methods
+        function cp = copy(obj)
+            cp = laca.model.Wing([obj.WingSections.copy()]);
+            cp.Mass = obj.Mass;
+            cp.Name = obj.Name;
+            cp.GridIDs = obj.GridIDs;
+        end
     end
 
     methods
@@ -169,16 +178,18 @@ classdef Wing < matlab.mixin.Copyable
         function obj = From_LE_TE(LE,TE,RefControlSurfs)
             %create TE points
             %create object
-            wingSections = laca.model.WingSection.empty;
+            wingSections = laca.model.WingSection.Empty;
             for i = 1:size(LE,2)-1
                 wingSections(i) = laca.model.WingSection(LE(:,i:i+1),...
                     TE(:,i:i+1));
             end
             % apply control surfs
             for i = 1:length(RefControlSurfs)
-                idx = RefControlSurfs(i).RefIdx;
-                wingSections(idx).ControlRefChord = RefControlSurfs(i).RefChord;
-                wingSections(idx).ControlName = RefControlSurfs(i).Name;
+                if RefControlSurfs(i).isControlSurface   
+                    idx = RefControlSurfs(i).RefIdx;
+                    wingSections(idx).ControlRefChord = RefControlSurfs(i).RefChord;
+                    wingSections(idx).ControlName = RefControlSurfs(i).Name;
+                end
             end
             obj = laca.model.Wing(wingSections);
         end

@@ -47,17 +47,26 @@ Wrench = vlm_model.get_forces_and_moments([-0.08*0.25,0,0]');
 F = (fh.roty(-AoA)*fh.rotz(-Beta))'*Wrench(1:3);
 L_katz= F(3);
 
-vlm_model.apply_result_ring(1.225);
-Wrench = vlm_model.get_forces_and_moments([-0.08*0.25,0,0]');
-F = (fh.roty(-AoA)*fh.rotz(-Beta))'*Wrench(1:3);
-L_fil= F(3);
-
 f = figure(4);clf;
 vlm_model.draw('param','P');
 f.CurrentAxes.ZDir = 'Reverse';
 ax = gca;
 ax.Clipping = 'off';
 axis equal
+colorbar
+
+vlm_model.apply_result_ring(1.225);
+Wrench = vlm_model.get_forces_and_moments([-0.08*0.25,0,0]');
+F = (fh.roty(-AoA)*fh.rotz(-Beta))'*Wrench(1:3);
+L_fil= F(3);
+
+f = figure(5);clf;
+vlm_model.draw('param','P');
+f.CurrentAxes.ZDir = 'Reverse';
+ax = gca;
+ax.Clipping = 'off';
+axis equal
+colorbar
 
 
 %% ensure correct lift generated (Katz)

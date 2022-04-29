@@ -1,4 +1,4 @@
-classdef Aircraft < matlab.mixin.Copyable
+classdef Aircraft < handle
     %AIRCRAFT Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -8,6 +8,10 @@ classdef Aircraft < matlab.mixin.Copyable
     end
     
     methods
+        function cp = copy(obj)
+            cp = laca.model.Aircraft([obj.Wings.copy()]);
+            cp.name = obj.Name;
+        end
         function obj = Aircraft(Wings)
             obj.Wings = Wings;
         end

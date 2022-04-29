@@ -1,4 +1,4 @@
-classdef WingSection < matlab.mixin.Heterogeneous & matlab.mixin.Copyable
+classdef WingSection < handle
     %WINGSECTION Summary of this class goes here
     %   Detailed explanation goes here
 
@@ -38,6 +38,21 @@ classdef WingSection < matlab.mixin.Heterogeneous & matlab.mixin.Copyable
         ControlArea;
         MAC;
     end
+
+    methods 
+        function cp = copy(obj)
+            cp = laca.model.WingSection(obj.LE,obj.TE);
+            cp.ControlRefChord = obj.ControlRefChord;
+            cp.ControlName = obj.ControlName;
+            cp.ControlDeflection = obj.ControlDeflection;
+            cp.ClCorrection = obj.ClCorrection; % Cl correction factor at each station
+            cp.CmCorrection = obj.CmCorrection; % Cm correction factor at each station
+            cp.Name = obj.Name;
+            cp.SplineSet = obj.SplineSet;
+            cp.Rot = obj.Rot;
+            cp.R = obj.R;
+        end
+    end
     methods
         function val = get.LE(obj)
             val = obj.Rot*obj.LE_hid + repmat(obj.R,1,2);
@@ -45,7 +60,6 @@ classdef WingSection < matlab.mixin.Heterogeneous & matlab.mixin.Copyable
         function val = get.TE(obj)
             val = obj.Rot*obj.TE_hid + repmat(obj.R,1,2);
         end
-
     end
     methods
         function val = get.Midpoint(obj)
@@ -167,27 +181,11 @@ classdef WingSection < matlab.mixin.Heterogeneous & matlab.mixin.Copyable
             obj.LE_hid = LE;
             obj.TE_hid = TE;
         end
-
-%         function obj = Rx(obj,deg)
-%             if deg ~= 0
-%                 obj.LE = fh.rotx(deg)*obj.LE;
-%                 obj.TE = fh.rotx(deg)*obj.TE;
-%             end
-%         end
-% 
-%         function obj = Ry(obj,deg)
-%             if deg ~= 0
-%                 obj.LE = fh.roty(deg)*obj.LE;
-%                 obj.TE = fh.roty(deg)*obj.TE;
-%             end
-%         end
-% 
-%         function obj = Rz(obj,deg)
-%             if deg ~= 0
-%                 obj.LE = fh.rotz(deg)*obj.LE;
-%                 obj.TE = fh.rotz(deg)*obj.TE;
-%             end
-%         end
+    end
+    methods(Static)
+        function obj = Empty()
+            obj = laca.model.WingSection(zeros(3,2),zeros(3,2));
+        end
     end
 end
 

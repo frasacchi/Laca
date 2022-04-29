@@ -1,6 +1,6 @@
 flare = 10;
 c = 0.08;
-NSpan = 80;
+NSpan = 6;
 LE = [0 0 0;0 0.05+sind(flare)*c/2 0.1;0 0 0];
 TE = [-c -c -c;0 0.05-sind(flare)*c/2 0.1;0 0 0];
 

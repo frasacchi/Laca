@@ -55,12 +55,27 @@ axis equal
 
 
 %% solve
-vlm_model = vlm_model.generate_AIC();
+vlm_model = vlm_model.generate_AIC3D();
+vlm_model = vlm_model.set_panel_filiments();
 vlm_model = vlm_model.solve(V_func);
 vlm_model = vlm_model.apply_result_katz(1.225);
 
+
 f = figure(4);clf;
-vlm_model.draw('param','L','Rotate',fh.rotz(90))
+subplot(2,1,1)
+vlm_model = vlm_model.apply_result_katz(1.225);
+vlm_model.draw('param','Cp','Rotate',fh.rotz(90))
+f.CurrentAxes.ZDir = 'Reverse';
+ax = gca;
+ax.Clipping = 'off';
+axis equal
+subplot(2,1,2)
+vlm_model = vlm_model.apply_result_ring(1.225);
+vlm_model.draw('param','Cp','Rotate',fh.rotz(90))
+f.CurrentAxes.ZDir = 'Reverse';
+ax = gca;
+ax.Clipping = 'off';
+axis equal
 % for y = -0.55:0.275:0.55
 %     for z = -0.1:0.1:0.1
 %         vlm_model.draw_streamline([0.2,y,z]')

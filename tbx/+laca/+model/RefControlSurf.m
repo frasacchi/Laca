@@ -6,6 +6,7 @@ classdef RefControlSurf
         RefIdx;
         RefChord;
         Name;
+        isControlSurface = true;
     end
     
     methods
@@ -15,6 +16,12 @@ classdef RefControlSurf
             obj.RefIdx = RefIdx;
             obj.RefChord = RefChord;
             obj.Name = Name;
+        end
+    end
+    methods(Static)
+        function obj = Empty()
+            obj = laca.model.RefControlSurf([0,0],[0,0],'');
+            obj.isControlSurface = false;
         end
     end
 end

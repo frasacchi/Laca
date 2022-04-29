@@ -85,16 +85,16 @@ ax.Clipping = 'off';
 axis equal
 
 AoA = 5;
-Beta = 45;
+Beta = 0;
 V_func = fh.roty(-AoA)*fh.rotz(-Beta)*[-20 0 0]';
 V_dir = V_func./vecnorm(V_func);
 
 winglet_filiment_model = winglet_model.copy();
 winglet_filiment_model.generate_te_horseshoe(V_dir*5);
-winglet_filiment_model.generate_AIC();
+winglet_filiment_model.generate_AIC3D();
 winglet_filiment_model.solve(V_func);
 winglet_filiment_model.set_panel_filiments();
-winglet_filiment_model.apply_result_filiment(1.225);
+winglet_filiment_model.apply_result_ring(1.225);
 
 f = figure(7);clf;
 winglet_filiment_model.draw_rings;

@@ -32,14 +32,14 @@ V_func = fh.roty(-AoA)*fh.rotz(-Beta)*[-20 0 0]';
 V_dir = V_func./vecnorm(V_func);
 vlm_model = vlm_model.generate_rings();
 vlm_model = vlm_model.generate_te_horseshoe(V_dir*0.5);
-vlm_model = vlm_model.generate_AIC();
+vlm_model = vlm_model.generate_AIC3D();
 vlm_model = vlm_model.solve(V_func);
 
 
 vlm_model = vlm_model.apply_result_katz(1.225);
 f = figure(4);clf;
 subplot(2,1,1)
-vlm_model.draw('param','Lprime','Rotate',fh.rotz(90))
+vlm_model.draw('param','Cp','Rotate',fh.rotz(90))
 f.CurrentAxes.ZDir = 'Reverse';
 ax = gca;
 ax.Clipping = 'off';
@@ -47,9 +47,9 @@ axis equal
 colorbar
 
 vlm_model = vlm_model.set_panel_filiments();
-vlm_model = vlm_model.apply_result_filiment(1.225);
+vlm_model = vlm_model.apply_result_ring(1.225);
 subplot(2,1,2)
-vlm_model.draw('param','D','Rotate',fh.rotz(90))
+vlm_model.draw('param','Cp','Rotate',fh.rotz(90))
 f.CurrentAxes.ZDir = 'Reverse';
 ax = gca;
 ax.Clipping = 'off';

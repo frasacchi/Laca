@@ -13,6 +13,20 @@ classdef ControlSurface < laca.vlm.Base
         Idx = 0;
         Deflection = 0;
     end
+
+    methods
+        function cp = copy(obj)
+            cp = laca.vlm.ControlSurface(obj.Name,obj.NControl);
+            cp.Type = obj.Type;
+            cp.Side = obj.Side;
+            cp.HingeNodes = obj.HingeNodes;
+            cp.Nodes = obj.Nodes;
+            cp.Panels = obj.Panels;
+            cp.NControl = obj.NControl;
+            cp.Idx = obj.Idx;
+            cp.Deflection = obj.Deflection;
+        end
+    end
     
     methods
         function obj = ControlSurface(Name,NControl)

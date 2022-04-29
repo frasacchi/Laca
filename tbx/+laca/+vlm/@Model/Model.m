@@ -23,16 +23,13 @@ classdef Model < laca.vlm.Base
         HasKatzResult = false;
         HasFilResult = false;
         Name = '';
-    end
-    properties(NonCopyable)
         Wings;
     end
     properties
         Filiment_tol = 0.2;
     end
-
-    properties(NonCopyable)
-        Panels_cache
+    properties(Access = private)
+        Panels_cache;
     end
 
     properties(Dependent)
@@ -54,11 +51,27 @@ classdef Model < laca.vlm.Base
         Normal;
         Collocation;
     end
-    methods (Access = protected)
-        function cp = copyElement(obj)
+    methods 
+        function cp = copy(obj)
             % Shallow copy object
-            cp = copyElement@matlab.mixin.Copyable(obj);
-            cp.Wings = [obj.Wings.copy()];
+            cp = laca.vlm.Model(arrayfun(@(x)x.copy,[obj.Wings]));
+            cp.useMEX = obj.useMEX;
+            cp.TENodes = obj.TENodes;
+            cp.TERings = obj.TERings;
+            cp.TEidx = obj.TEidx;
+            cp.Filiment_Force= obj.Filiment_Force;
+            cp.Filiment_Position = obj.Filiment_Position;
+            cp.Panel_Filiments = obj.Panel_Filiments;
+            cp.AIC = obj.AIC;
+            cp.AIC3D = obj.AIC3D;
+            cp.Gamma = obj.Gamma;
+            cp.V = obj.V;
+            cp.V_i = obj.V_i;
+            cp.V_col = obj.V_col;
+            cp.HasKatzResult = obj.HasKatzResult;
+            cp.HasFilResult = obj.HasFilResult;
+            cp.Name = obj.Name;
+            cp.Filiment_tol = obj.Filiment_tol;
         end
     end
 
@@ -297,9 +310,12 @@ classdef Model < laca.vlm.Base
             if length(NChord) == 1
                 NChord = ones(1,length(lacaModel.Wings))*NChord;
             end
+            if length(minSpan) == 1
+                minSpan = ones(1,length(lacaModel.Wings))*minSpan;
+            end
             wings = laca.vlm.Wing.empty;
             for i = 1:length(lacaModel.Wings)
-                wings(i) = laca.vlm.Wing.From_laca_wing(lacaModel.Wings(i),minSpan,NChord(i),ignoreControlSurf);
+                wings(i) = laca.vlm.Wing.From_laca_wing(lacaModel.Wings(i),minSpan(i),NChord(i),ignoreControlSurf);
             end
             obj = laca.vlm.Model(wings);
             obj.Name = lacaModel.Name;
