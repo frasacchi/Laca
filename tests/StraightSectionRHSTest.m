@@ -22,7 +22,7 @@ Chord = 0.1;
 LE = [0 0;0 Span/2;0 0];
 TE = LE;
 TE(1,:) = -Chord;
-wing = laca.model.Wing.From_RHS_LE_TE(LE,TE,[]);
+wing = laca.model.Wing.From_RHS_LE_TE(LE,TE,{});
 vlm_wing = laca.vlm.Wing.From_laca_wing(wing,Span/NSpan,NChord,true);
 
 N = NChord*NSpan;

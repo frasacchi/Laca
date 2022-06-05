@@ -15,12 +15,12 @@
 LE = [0 0 0;0 0.4 0.5;0 0 0];
 TE = LE;
 TE(1,:) = -0.1;
-
-wings = laca.model.Wing.From_LE_TE(LE(:,2:3)-repmat(LE(:,2),1,2),TE(:,2:3)-repmat(LE(:,2),1,2),[]);
-wings.R = LE(:,2);
-wings(2) = laca.model.Wing.From_LE_TE(LE(:,1:2),TE(:,1:2),[]);
-wings(3) = wings(2).reflect_about_XZ();
-wings(4) = wings(1).reflect_about_XZ();
+wings = {};
+wings{1} = laca.model.Wing.From_LE_TE(LE(:,2:3)-repmat(LE(:,2),1,2),TE(:,2:3)-repmat(LE(:,2),1,2),[]);
+wings{1}.R = LE(:,2);
+wings{2} = laca.model.Wing.From_LE_TE(LE(:,1:2),TE(:,1:2),[]);
+wings{3} = wings{2}.reflect_about_XZ();
+wings{4} = wings{1}.reflect_about_XZ();
 wings = fliplr(wings);
 
 model = laca.model.Aircraft(wings);
@@ -62,8 +62,8 @@ axis equal
 
 % rotate the winglets
 winglet_model = vlm_model.copy();
-winglet_model.Wings(1).Rot = fh.rotx(45);
-winglet_model.Wings(end).Rot = fh.rotx(-45);
+winglet_model.Wings{1}.Rot = fh.rotx(45);
+winglet_model.Wings{end}.Rot = fh.rotx(-45);
 winglet_model.generate_te_horseshoe(V_dir*5);
 winglet_model.generate_AIC();
 winglet_model.solve(V_func);
@@ -112,23 +112,23 @@ axis equal
 
 
 %% ensure left winglet touches main wing (Undeformed)
-winglet_idx = find(vlm_model.Wings(1).isLE,1,'last');
-winglet_corner = vlm_model.Wings(1).Nodes(:,vlm_model.Wings(1).Panels(2,winglet_idx));
-wing_idx = find(vlm_model.Wings(2).isLE,1);
-wing_corner = vlm_model.Wings(2).Nodes(:,vlm_model.Wings(2).Panels(1,wing_idx));
+winglet_idx = find(vlm_model.Wings{1}.isLE,1,'last');
+winglet_corner = vlm_model.Wings{1}.Nodes(:,vlm_model.Wings{1}.Panels(2,winglet_idx));
+wing_idx = find(vlm_model.Wings{2}.isLE,1);
+wing_corner = vlm_model.Wings{2}.Nodes(:,vlm_model.Wings{2}.Panels(1,wing_idx));
 tol = 1e-2;
 assert(all((winglet_corner-wing_corner)<tol))
 
 %% ensure right winglet touches main wing (Undeformed)
-winglet_idx = find(vlm_model.Wings(4).isLE,1);
-winglet_corner = vlm_model.Wings(4).Nodes(:,vlm_model.Wings(4).Panels(1,winglet_idx));
-wing_idx = find(vlm_model.Wings(3).isLE,1,'last');
-wing_corner = vlm_model.Wings(3).Nodes(:,vlm_model.Wings(3).Panels(2,wing_idx));
+winglet_idx = find(vlm_model.Wings{4}.isLE,1);
+winglet_corner = vlm_model.Wings{4}.Nodes(:,vlm_model.Wings{4}.Panels(1,winglet_idx));
+wing_idx = find(vlm_model.Wings{3}.isLE,1,'last');
+wing_corner = vlm_model.Wings{3}.Nodes(:,vlm_model.Wings{3}.Panels(2,wing_idx));
 tol = 1e-2;
 assert(all((winglet_corner-wing_corner)<tol))
 
 %% ensure copied model hasnt deformed origianl model
-winglet_nodes_z = vlm_model.Wings(4).Nodes(3,:);
+winglet_nodes_z = vlm_model.Wings{4}.Nodes(3,:);
 tol = 1e-2;
 assert(all(winglet_nodes_z<tol))
 
@@ -137,18 +137,18 @@ tol = 1e-2;
 assert(abs(L--10.401)<tol,'Incorrect Lift')
 
 %% ensure left winglet touches main wing (deformed)
-winglet_idx = find(winglet_model.Wings(1).isLE,1,'last');
-winglet_corner = winglet_model.Wings(1).Nodes(:,winglet_model.Wings(1).Panels(2,winglet_idx));
-wing_idx = find(winglet_model.Wings(2).isLE,1);
-wing_corner = winglet_model.Wings(2).Nodes(:,winglet_model.Wings(2).Panels(1,wing_idx));
+winglet_idx = find(winglet_model.Wings{1}.isLE,1,'last');
+winglet_corner = winglet_model.Wings{1}.Nodes(:,winglet_model.Wings{1}.Panels(2,winglet_idx));
+wing_idx = find(winglet_model.Wings{2}.isLE,1);
+wing_corner = winglet_model.Wings{2}.Nodes(:,winglet_model.Wings{2}.Panels(1,wing_idx));
 tol = 1e-2;
 assert(all((winglet_corner-wing_corner)<tol))
 
 %% ensure right winglet touches main wing (deformed)
-winglet_idx = find(winglet_model.Wings(4).isLE,1);
-winglet_corner = winglet_model.Wings(4).Nodes(:,winglet_model.Wings(4).Panels(1,winglet_idx));
-wing_idx = find(winglet_model.Wings(3).isLE,1,'last');
-wing_corner = winglet_model.Wings(3).Nodes(:,winglet_model.Wings(3).Panels(2,wing_idx));
+winglet_idx = find(winglet_model.Wings{4}.isLE,1);
+winglet_corner = winglet_model.Wings{4}.Nodes(:,winglet_model.Wings{4}.Panels(1,winglet_idx));
+wing_idx = find(winglet_model.Wings{3}.isLE,1,'last');
+wing_corner = winglet_model.Wings{3}.Nodes(:,winglet_model.Wings{3}.Panels(2,wing_idx));
 tol = 1e-2;
 assert(all((winglet_corner-wing_corner)<tol))
 

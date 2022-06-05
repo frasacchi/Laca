@@ -25,7 +25,7 @@ LE = [0 0 0;0 Span/2*(4/5) Span/2;0 0 0];
 TE = LE;
 TE(1,:) = -Chord;
 ail = laca.model.RefControlSurf(2,[0.2,0.2],'ail');
-wing = laca.model.Wing.From_RHS_LE_TE(LE,TE,ail);
+wing = laca.model.Wing.From_RHS_LE_TE(LE,TE,{ail});
 vlm_wing = laca.vlm.Wing.From_laca_wing(wing,minSpan,NChord,false);
 
 N = NChord*NSpan + 2*ceil(Span/2*(1/5)/minSpan);

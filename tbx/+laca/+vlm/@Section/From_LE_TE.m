@@ -26,7 +26,7 @@ chord_step = (chord_eta_RHS-chord_eta_LHS)./(NChord);
 chord_eta = repmat(chord_eta_LHS',1,NSpan + 1) + repmat(0:NSpan,NChord+1,1).*repmat(chord_step',1,NSpan+1);
 
 
-if exist('controlSurface','var') && controlSurface.NControl > 0
+if ~strcmp(controlSurface.Name,'None') && controlSurface.NControl > 0
     start_hinge_idx = (NSpan+1)*(NChord-controlSurface.NControl)+1;
     end_hinge_idx = (NSpan+1)*(NChord-controlSurface.NControl+1);
     controlSurface.HingeNodes = [start_hinge_idx,end_hinge_idx];

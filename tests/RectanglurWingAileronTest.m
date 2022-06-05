@@ -8,9 +8,9 @@ LE = [0 0 0;0 Span/2*(4/5) Span/2;0 0 0];
 TE = LE;
 TE(1,:) = -Chord;
 ail = laca.model.RefControlSurf(2,ones(1,2)*0.25,'ail');
-wing = laca.model.Wing.From_RHS_LE_TE(LE,TE,ail);
+wing = laca.model.Wing.From_RHS_LE_TE(LE,TE,{ail});
 vlm_wing = laca.vlm.Wing.From_laca_wing(wing,Span/NSpan,NChord,false);
-model = laca.model.Aircraft(wing);
+model = laca.model.Aircraft({wing});
 figure(1);clf;model.draw;
 axis equal
 
@@ -69,9 +69,9 @@ assert(Wrench(4)<0,'Incorrect Lift')
 
 function vlm_model = deflect_ailerons(vlm_model,ail_deflection)
 for i = 1:length(vlm_model.Wings)
-    for j = 1:length(vlm_model.Wings(i).Sections)
-        if ~isempty(vlm_model.Wings(i).Sections(j).ControlSurfaces)
-            surfs = vlm_model.Wings(i).Sections(j).ControlSurfaces;
+    for j = 1:length(vlm_model.Wings{i}.Sections)
+        if ~isempty(vlm_model.Wings{i}.Sections{j}.ControlSurfaces)
+            surfs = vlm_model.Wings{i}.Sections{j}.ControlSurfaces;
             for k = 1:length(surfs)
                 switch surfs(k).Name
                     case 'ail_l'
@@ -80,7 +80,7 @@ for i = 1:length(vlm_model.Wings)
                         surfs(k).Deflection = -ail_deflection;
                 end
             end
-            vlm_model.Wings(i).Sections(j).ControlSurfaces = surfs;
+            vlm_model.Wings{i}.Sections{j}.ControlSurfaces = surfs;
         end
     end
 end

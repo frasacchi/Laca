@@ -87,21 +87,21 @@ function out = createStreamwiseVariant(obj,varargin)
     end
     
     %% generate Wing Sections
-    new_WingSections = laca.model.WingSection.empty;
+    new_WingSections = {};
     for i = 1:size(new_LE,2)-1
-        new_WingSections(i) = laca.model.WingSection(new_LE(:,i:i+1),new_TE(:,i:i+1));
-        new_WingSections(i).Normalwash = Normalwash(i:i+1);
+        new_WingSections{i} = laca.model.WingSection(new_LE(:,i:i+1),new_TE(:,i:i+1));
+        new_WingSections{i}.Normalwash = Normalwash(i:i+1);
     end
 
     %% figure out where each control surface now lives
-    centroids = cell2mat(arrayfun(@(x)x.Centroid,new_WingSections,'UniformOutput',false));
+    centroids = cell2mat(cellfun(@(x)x.Centroid,new_WingSections,'UniformOutput',false));
     for i = 1:length(obj.WingSections)
         if obj.WingSections(i).hasControlSurf
             tmp_centroid = obj.WingSections(i).Centroid;
             dist = arrayfun(@(j)norm(centroids(:,j)-tmp_centroid),1:length(new_WingSections));
             [~,idx] = min(dist);
-            new_WingSections(idx).ControlRefChord = obj.WingSections(i).ControlRefChord;
-            new_WingSections(idx).ControlName = obj.WingSections(i).ControlName;
+            new_WingSections{idx}.ControlRefChord = obj.WingSections{i}.ControlRefChord;
+            new_WingSections{idx}.ControlName = obj.WingSections{i}.ControlName;
         end
     end
     out = obj.copy();

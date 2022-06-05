@@ -13,9 +13,9 @@ else
 end
 idx = 1;
 for i = 1:length(obj.Wings)
-    N = obj.Wings(i).NPanels;
+    N = obj.Wings{i}.NPanels;
     p_idx = ((idx-1)*4+1):((idx-1+N)*4);
-    obj.Wings(i).apply_result_filiment(...
+    obj.Wings{i}.apply_result_filiment(...
         obj.Gamma(idx:idx+N-1),Fs(:,idx:idx+N-1),...
         obj.Filiment_Force(:,p_idx),obj.V,rho);
     idx = idx + N;

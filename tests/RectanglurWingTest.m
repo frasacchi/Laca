@@ -15,8 +15,8 @@
 LE = [0 0 0;0 0.25 0.5;0 0 0];
 TE = LE;
 TE(1,:) = -0.1;
-wing = laca.model.Wing.From_RHS_LE_TE(LE,TE,[]);
-model = laca.model.Aircraft(wing);
+wing = laca.model.Wing.From_RHS_LE_TE(LE,TE,{});
+model = laca.model.Aircraft({wing});
 figure(1);clf;model.draw;
 axis equal
 

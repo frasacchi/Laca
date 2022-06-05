@@ -54,7 +54,7 @@ classdef Model < laca.vlm.Base
     methods 
         function cp = copy(obj)
             % Shallow copy object
-            cp = laca.vlm.Model(arrayfun(@(x)x.copy,[obj.Wings]));
+            cp = laca.vlm.Model(cellfun(@(x)x.copy,obj.Wings,'UniformOutput',false));
             cp.useMEX = obj.useMEX;
             cp.TENodes = obj.TENodes;
             cp.TERings = obj.TERings;
@@ -77,65 +77,84 @@ classdef Model < laca.vlm.Base
 
     %dependent properties
     methods
+        function set.useMEX(obj,val)
+            obj.useMEX = val;
+            for i = 1:length(obj.Wings)
+                obj.Wings{i}.useMEX = val;
+            end
+        end
         function val = get.NPanels(obj)
-            val = sum([obj.Wings.NPanels]);
+            val = sum(cellfun(@(x)x.NPanels,obj.Wings));
         end
         function val = get.Connectivity(obj)
-            val = cat(2,obj.Wings.Connectivity);
-            np = [obj.Wings.NPanels];
-            idx = cumsum([0,[obj.Wings.NPanels]]);
+            res = cellfun(@(x)x.Connectivity,obj.Wings,'UniformOutput',false);
+            val = cat(2,res{:});
+            np = cellfun(@(x)x.NPanels,obj.Wings);
+            idx = cumsum([0,np]);
             for i = 1:length(np)
                 val(:,idx(i)+1:idx(i+1)) = val(:,idx(i)+1:idx(i+1)) + ...
                     repmat(idx(i),4,np(i));
             end
         end
         function val = get.PanelChord(obj)
-            val = cat(1,obj.Wings.PanelChord);
+            res = cellfun(@(x)x.PanelChord,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.PanelSpan(obj)
-            val = cat(1,obj.Wings.PanelSpan);
+            res = cellfun(@(x)x.PanelSpan,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.Centroid(obj)
-            val = [obj.Wings.Centroid];
+            res = cellfun(@(x)x.Centroid,obj.Wings,'UniformOutput',false);
+            val = cat(2,res{:});
         end
         function val = get.Panels(obj)
             if ~isempty(obj.Panels_cache)
                 val = obj.Panels_cache;
             else
-                val = cat(2,obj.Wings.Panels);
-                np = [obj.Wings.NPanels];
-                node_idx = cumsum([0,[obj.Wings.NNodes]]);
-                idx = cumsum([0,[obj.Wings.NPanels]]);
-                for i = 1:length(np)
-                    val(:,idx(i)+1:idx(i+1)) = val(:,idx(i)+1:idx(i+1)) + ...
-                        repmat(node_idx(i),4,np(i));
-                end
-                obj.Panels_cache = val;
+            res = cellfun(@(x)x.Panels,obj.Wings,'UniformOutput',false);
+            val = cat(2,res{:});
+            np = cellfun(@(x)x.NPanels,obj.Wings);
+            node_idx = cumsum([0,cellfun(@(x)x.NNodes,obj.Wings)]);
+            idx = cumsum([0,np]);
+            for i = 1:length(np)
+                val(:,idx(i)+1:idx(i+1)) = val(:,idx(i)+1:idx(i+1)) + ...
+                    repmat(node_idx(i),4,np(i));
+            end
+            obj.Panels_cache = val;
             end
         end
         function val = get.Nodes(obj)
-            val = cat(2,obj.Wings.Nodes);
+            res = cellfun(@(x)x.Nodes,obj.Wings,'UniformOutput',false);
+            val = cat(2,res{:});
         end
         function val = get.RingNodes(obj)
-            val = cat(2,obj.Wings.RingNodes);
+            res = cellfun(@(x)x.RingNodes,obj.Wings,'UniformOutput',false);
+            val = cat(2,res{:});
         end
         function val = get.Collocation(obj)
-            val = cat(2,obj.Wings.Collocation);
+            res = cellfun(@(x)x.Collocation,obj.Wings,'UniformOutput',false);
+            val = cat(2,res{:});
         end
         function val = get.Normal(obj)
-            val = [obj.Wings.Normal];
+            res = cellfun(@(x)x.Normal,obj.Wings,'UniformOutput',false);
+            val = cat(2,res{:});
         end
         function val = get.isTE(obj)
-            val = cat(1,obj.Wings.isTE);
+            res = cellfun(@(x)x.isTE,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.isLE(obj)
-            val = cat(1,obj.Wings.isLE);
+            res = cellfun(@(x)x.isLE,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.Normalwash(obj)
-            val = cat(1,obj.Wings.Normalwash);
+            res = cellfun(@(x)x.Normalwash,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.Area(obj)
-            val = cat(1,obj.Wings.Area);
+            res = cellfun(@(x)x.Area,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.dC_l_dalpha(obj)
             val = cat(1,obj.Wings.dC_l_dalpha);
@@ -150,15 +169,15 @@ classdef Model < laca.vlm.Base
             val = zeros(obj.NPanels,1);
             idx = 1;
             for i = 1:length(obj.Wings)
-                N = obj.Wings(i).NPanels;
-                val(idx:idx+N-1) = obj.Wings(i).(propName);
+                N = obj.Wings{i}.NPanels;
+                val(idx:idx+N-1) = obj.Wings{i}.(propName);
                 idx = idx + N;
             end
         end
         function val = Vbody(obj,U)
             val = [];
             for i = 1:length(obj.Wings)
-                val = [val,obj.Wings(i).Vbody(U)];
+                val = [val,obj.Wings{i}.Vbody(U)];
             end
         end
         function res = get_forces_and_moments(obj,p)
@@ -194,8 +213,8 @@ classdef Model < laca.vlm.Base
             end
             idx = 1;
             for i = 1:length(obj.Wings)
-                N = obj.Wings(i).NPanels;
-                obj.Wings(i) = obj.Wings(i).apply_result_katz(obj.Gamma(idx:idx+N-1),obj.V,rho);
+                N = obj.Wings{i}.NPanels;
+                obj.Wings{i}.apply_result_katz(obj.Gamma(idx:idx+N-1),obj.V,rho);
                 idx = idx + N;
             end
             obj.HasKatzResult = true;
@@ -225,15 +244,23 @@ classdef Model < laca.vlm.Base
             end
         end
         function obj = Stitch(obj)
-            obj.Wings = arrayfun(@(x)x.Stitch,obj.Wings);
+            obj.Wings = cellfun(@(x)x.Stitch,obj.Wings,'UniformOutput',false);
         end
         function obj = CombineWings(obj,idx)
             idx_to_keep = setdiff(1:length(obj.Wings),idx);
-            new_wing = laca.vlm.Wing([obj.Wings(idx).Sections]);
-            obj.Wings = [new_wing,obj.Wings(idx_to_keep)];
+            new_wing = laca.vlm.Wing([obj.Wings{idx}.Sections]);
+            obj.Wings = {new_wing,obj.Wings{idx_to_keep}};
         end
 
         function obj = Model(Wings,varargin)
+            if ~iscell(Wings)
+                error('Input must be a cell array of WingSections')
+            end
+            for i = 1:length(Wings)
+                if ~isa(Wings{i},'laca.vlm.Wing')
+                    error('Input must be a cell array of WingSections')
+                end
+            end
             obj.Wings = Wings;
         end
 
@@ -308,14 +335,16 @@ classdef Model < laca.vlm.Base
     methods(Static)
         function obj = From_laca_model(lacaModel,minSpan,NChord,ignoreControlSurf)
             if length(NChord) == 1
-                NChord = ones(1,length(lacaModel.Wings))*NChord;
+                NChords = ones(1,length(lacaModel.Wings))*NChord;
+            else
+                NChords = NChord;
             end
             if length(minSpan) == 1
                 minSpan = ones(1,length(lacaModel.Wings))*minSpan;
             end
-            wings = laca.vlm.Wing.empty;
+            wings = {};
             for i = 1:length(lacaModel.Wings)
-                wings(i) = laca.vlm.Wing.From_laca_wing(lacaModel.Wings(i),minSpan(i),NChord(i),ignoreControlSurf);
+                wings{i} = laca.vlm.Wing.From_laca_wing(lacaModel.Wings{i},minSpan(i),NChords(i),ignoreControlSurf);
             end
             obj = laca.vlm.Model(wings);
             obj.Name = lacaModel.Name;

@@ -15,7 +15,7 @@ function out = ApplySplineSet(obj,structural_file,varargin)
     coords = coords(:,i);
     GIDs = obj.GridIDs(i_gid);
 
-    wingSections = arrayfun(@(x)x.ApplySplineSet(coords,GIDs),obj.WingSections);
+    wingSections = cell2mat(cellfun(@(x)x.ApplySplineSet(coords,GIDs),obj.WingSections,'UniformOutput',false));
     % get the coordinates of all the structural points that can be used in
     % the splines
     out = obj.copy();

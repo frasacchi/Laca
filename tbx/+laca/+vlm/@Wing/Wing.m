@@ -53,9 +53,15 @@ classdef Wing < laca.vlm.Base
         
     end
     methods
+        function set.useMEX(obj,val)
+            obj.useMEX = val;
+            for i = 1:length(obj.Sections)
+                obj.Sections{i}.useMEX = val;
+            end
+        end
       function cp = copy(obj)
          % Shallow copy object
-         cp = laca.vlm.Wing(arrayfun(@(x)x.copy,[obj.Sections]));
+         cp = laca.vlm.Wing(cellfun(@(x)x.copy,obj.Sections,'UniformOutput',false));
          cp.useMEX = obj.useMEX;
          cp.HasResult = obj.HasResult;
          cp.Name = obj.Name;
@@ -69,45 +75,50 @@ classdef Wing < laca.vlm.Base
     methods
         function set.Vbody_func(obj,val)
             for i = 1:length(obj.Sections)
-                obj.Sections(i).Vbody_func = val;
+                obj.Sections{i}.Vbody_func = val;
             end
         end
         function set.Rot(obj,val)
             for i = 1:length(obj.Sections)
-                obj.Sections(i).Rot = val;
+                obj.Sections{i}.Rot = val;
             end
         end
         function set.R(obj,val)
             for i = 1:length(obj.Sections)
-                obj.Sections(i).R = val;
+                obj.Sections{i}.R = val;
             end
         end
         function val = get.Connectivity(obj)
-            val = cat(2,obj.Sections.Connectivity);
-            np = [obj.Sections.NPanels];
-            idx = cumsum([0,[obj.Sections.NPanels]]);
+            res = cellfun(@(x)x.Connectivity,obj.Sections,'UniformOutput',false);
+            val = cat(2,res{:});
+            np = cellfun(@(x)x.NPanels,obj.Sections);
+            idx = cumsum([0,np]);
             for i = 1:length(np)
                 val(:,idx(i)+1:idx(i+1)) = val(:,idx(i)+1:idx(i+1)) + ...
                     repmat(idx(i),4,np(i));
             end
         end
         function val = get.PanelChord(obj)
-            val = cat(1,obj.Sections.PanelChord);
+            res = cellfun(@(x)x.PanelChord,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.PanelSpan(obj)
-            val = cat(1,obj.Sections.PanelSpan);
+            res = cellfun(@(x)x.PanelSpan,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.Centroid(obj)
-            val = cat(2,obj.Sections.Centroid);
+            res = cellfun(@(x)x.Centroid,obj.Sections,'UniformOutput',false);
+            val = cat(2,res{:});
         end
         function val = get.Panels(obj)
             if ~isempty(obj.Panels_cache)
                 val = obj.Panels_cache;
             else
-            val = cat(2,obj.Sections.Panels);
-            np = [obj.Sections.NPanels];
-            node_idx = cumsum([0,[obj.Sections.NNodes]]);
-            idx = cumsum([0,[obj.Sections.NPanels]]);
+            res = cellfun(@(x)x.Panels,obj.Sections,'UniformOutput',false);
+            val = cat(2,res{:});
+            np = cellfun(@(x)x.NPanels,obj.Sections);
+            node_idx = cumsum([0,cellfun(@(x)x.NNodes,obj.Sections)]);
+            idx = cumsum([0,np]);
             for i = 1:length(np)
                 val(:,idx(i)+1:idx(i+1)) = val(:,idx(i)+1:idx(i+1)) + ...
                     repmat(node_idx(i),4,np(i));
@@ -116,64 +127,84 @@ classdef Wing < laca.vlm.Base
             end
         end
         function val = get.F(obj)
-            val = cat(2,obj.Sections.F);
+            res = cellfun(@(x)x.F,obj.Sections,'UniformOutput',false);
+            val = cat(2,res{:});
         end
         function val = get.dC_l_dalpha(obj)
-            val = cat(1,obj.Sections.dC_l_dalpha);
+            res = cellfun(@(x)x.dC_l_dalpha,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.Gamma(obj)
-            val = cat(1,obj.Sections.Gamma);
+            res = cellfun(@(x)x.Gamma,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.N(obj)
-            val = cat(1,obj.Sections.N);
+            res = cellfun(@(x)x.N,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.L(obj)
-            val = cat(1,obj.Sections.L);
+            res = cellfun(@(x)x.L,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.D(obj)
-            val = cat(1,obj.Sections.D);
+            res = cellfun(@(x)x.D,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.S(obj)
-            val = cat(1,obj.Sections.S);
+            res = cellfun(@(x)x.S,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.Lprime(obj)
-            val = cat(1,obj.Sections.Lprime);
+            res = cellfun(@(x)x.Lprime,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.P(obj)
-            val = cat(1,obj.Sections.P);
+            res = cellfun(@(x)x.P,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.Cp(obj)
-            val = cat(1,obj.Sections.Cp);
+            res = cellfun(@(x)x.Cp,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.Cl(obj)
-            val = cat(1,obj.Sections.Cl);
+            res = cellfun(@(x)x.Cl,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.Cd(obj)
-            val = cat(1,obj.Sections.Cd);
+            res = cellfun(@(x)x.Cd,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.Nodes(obj)
-            val = cat(2,obj.Sections.Nodes);
+            res = cellfun(@(x)x.Nodes,obj.Sections,'UniformOutput',false);
+            val = cat(2,res{:});
         end
         function val = get.RingNodes(obj)
-            val = cat(2,obj.Sections.RingNodes);
+            res = cellfun(@(x)x.RingNodes,obj.Sections,'UniformOutput',false);
+            val = cat(2,res{:});
         end
         function val = get.Collocation(obj)
-            val = cat(2,obj.Sections.Collocation);
+            res = cellfun(@(x)x.Collocation,obj.Sections,'UniformOutput',false);
+            val = cat(2,res{:});
         end
         function val = get.Normal(obj)
-            val = [obj.Sections.Normal];
+            res = cellfun(@(x)x.Normal,obj.Sections,'UniformOutput',false);
+            val = cat(2,res{:});
         end
         function val = get.isTE(obj)
-            val = cat(1,obj.Sections.isTE);
+            res = cellfun(@(x)x.isTE,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.isLE(obj)
-            val = cat(1,obj.Sections.isLE);
+            res = cellfun(@(x)x.isLE,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.Area(obj)
-            val = cat(1,obj.Sections.Area);
+            res = cellfun(@(x)x.Area,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
         function val = get.Normalwash(obj)
-            val = cat(1,obj.Sections.Normalwash);
+            res = cellfun(@(x)x.Normalwash,obj.Sections,'UniformOutput',false);
+            val = cat(1,res{:});
         end
     end
 
@@ -184,19 +215,19 @@ classdef Wing < laca.vlm.Base
         function val = Vbody(obj,U)
             val = [];
             for i = 1:length(obj.Sections)
-                val = [val,obj.Sections(i).Vbody(U)];
+                val = [val,obj.Sections{i}.Vbody(U)];
             end
         end
         function obj = Stitch(obj)
             for i = 1:length(obj.Sections)-1
                 % get rhs panels
-                sec_lhs = obj.Sections(i);
+                sec_lhs = obj.Sections{i};
                 con_lhs = sec_lhs.Connectivity;
                 lhs_idx = find(isnan(con_lhs(2,:)));
                 N_lhs = size(con_lhs,2);
 
                 % get lhs panels
-                sec_rhs = obj.Sections(i+1);
+                sec_rhs = obj.Sections{i+1};
                 con_rhs = sec_rhs.Connectivity;
                 rhs_idx = find(isnan(con_rhs(4,:)));
 
@@ -206,8 +237,8 @@ classdef Wing < laca.vlm.Base
                     con_rhs(4,rhs_idx(j)) = lhs_idx(j) - N_lhs - 1;
                 end
 
-                obj.Sections(i+1).Connectivity = con_rhs;
-                obj.Sections(i).Connectivity = con_lhs;
+                obj.Sections{i+1}.Connectivity = con_rhs;
+                obj.Sections{i}.Connectivity = con_lhs;
             end
         end
     end
@@ -219,23 +250,13 @@ classdef Wing < laca.vlm.Base
             Lift = -obj.Lift_katz(gamma,V,rho);
             idx = 1;
             for i = 1:length(obj.Sections)
-                pN = obj.Sections(i).NPanels;
-                obj.Sections(i) = obj.Sections(i).apply_result_katz(...
+                pN = obj.Sections{i}.NPanels;
+                obj.Sections{i}.apply_result_katz(...
                     gamma(idx:idx+pN-1),...
                     -Lift(idx:idx+pN-1),V,rho);
                 idx = idx + pN;
             end
         end
-%         function obj = apply_result_filiment(obj,gamma,Fs,V,rho)
-%             idx = 1;
-%             for i = 1:length(obj.Sections)
-%                 pN = obj.Sections(i).NPanels;
-%                 obj.Sections(i) = obj.Sections(i).apply_result(...
-%                     gamma(idx:idx+pN-1),...
-%                     Fs(:,idx:idx+pN-1),V,rho);
-%                 idx = idx + pN;
-%             end
-%         end
         function L = Lift_katz(obj,gamma,V,rho)
             Vs = V(obj.Centroid);
             L = rho .* vecnorm(Vs)' .* obj.PanelSpan;
@@ -254,18 +275,26 @@ classdef Wing < laca.vlm.Base
 
     methods
         function obj = Wing(Sections,varargin)
+            if ~iscell(Sections)
+                error('Input must be a cell array of WingSections')
+            end
+            for i = 1:length(Sections)
+                if ~isa(Sections{i},'laca.vlm.Section')
+                    error('Input must be a cell array of WingSections')
+                end
+            end
             obj.Sections = Sections;
-            obj.NPanels = sum([obj.Sections.NPanels]);
-            obj.NNodes = sum([obj.Sections.NNodes]);
+            obj.NPanels = sum(cellfun(@(x)x.NPanels,obj.Sections));
+            obj.NNodes = sum(cellfun(@(x)x.NNodes,obj.Sections));
         end
 
     end
     methods(Static)
         function obj = From_laca_wing(lacaWing,minSpan,NChord,ignoreControlSurf)
-            sections = laca.vlm.Section.empty;
+            sections = {};
             for i = 1:length(lacaWing.WingSections)
-                sections(end+1) = laca.vlm.Section.From_laca_section(...
-                    lacaWing.WingSections(i),minSpan,NChord,...
+                sections{end+1} = laca.vlm.Section.From_laca_section(...
+                    lacaWing.WingSections{i},minSpan,NChord,...
                     ignoreControlSurf);
             end
             obj = laca.vlm.Wing(sections);
