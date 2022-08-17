@@ -24,7 +24,7 @@ function write_trim(obj,filename)
         .writeToFile(fid);
 
     % write aero constants
-    mni.printing.cards.AEROS(obj.RefChord,obj.RefSpan,obj.RefArea).writeToFile(fid);
+    mni.printing.cards.AEROS(obj.RefChord,obj.RefSpan,obj.RefArea,ACSID=obj.ACSID).writeToFile(fid);
 
     % set trim values (NAN is free and will not be included in trim card)
     labels = [];

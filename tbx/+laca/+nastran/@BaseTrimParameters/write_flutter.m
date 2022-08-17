@@ -32,7 +32,7 @@ function write_flutter(obj,filename)
     mni.printing.bdf.writeComment(fid,'Aerodynamic Properties')
     mni.printing.bdf.writeColumnDelimiter(fid,'8');
     %create AERO card
-    mni.printing.cards.AERO(obj.RefChord,obj.RefDensity).writeToFile(fid);
+    mni.printing.cards.AERO(obj.RefChord,obj.RefDensity,ACSID=obj.ACSID).writeToFile(fid);
     
     mni.printing.bdf.writeComment(fid,'Flutter Card and Properties')
     mni.printing.bdf.writeColumnDelimiter(fid,'8');

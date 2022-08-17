@@ -21,6 +21,7 @@ classdef BaseTrimParameters < handle & matlab.mixin.Copyable
         rho = 0;
         Mach = 0;
         AEQR = 1;
+        ACSID = [];
         
         RefChord = 1;
         RefSpan = 1;
