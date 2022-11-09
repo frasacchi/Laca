@@ -5,8 +5,8 @@ TE = [-c -c -c;0 0.5-delta 1;0 0 0];
 
 flare = atand(delta*2/c);
 wings = {};
-wings{1} = laca.model.Wing.From_LE_TE(LE(:,1:2),TE(:,1:2),[]);
-wings{2} = laca.model.Wing.From_LE_TE(LE(:,2:3)-repmat(LE(:,2),1,2),TE(:,2:3)-repmat(LE(:,2),1,2),[]);
+wings{1} = laca.model.Wing.From_LE_TE(LE(:,1:2),TE(:,1:2),{});
+wings{2} = laca.model.Wing.From_LE_TE(LE(:,2:3)-repmat(LE(:,2),1,2),TE(:,2:3)-repmat(LE(:,2),1,2),{});
 wings{2}.R = LE(:,2);
 model = laca.model.Aircraft(wings);
 
