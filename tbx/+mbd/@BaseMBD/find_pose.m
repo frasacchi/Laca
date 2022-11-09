@@ -9,6 +9,7 @@ if  isempty(idx_d)
     [~,idx_i] = licols(C_q,1e-4);
     idx_d = ismember(1:size(C_q,2),idx_i);
 end
+idx_d = logical(idx_d);
 idx_i = ~idx_d;
 q_idx = 1:qs;
 qd_idx = qs+1:Xs;
