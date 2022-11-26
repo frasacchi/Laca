@@ -39,47 +39,6 @@ for i = 1:NPanels
             res = dot(n,P_vec)>=0 & dot(n,P_vec)<=v_norm & vecnorm(pos-(A+P_vec))<filiment_tol;
             ids(idx_k,i) = ids(idx_k,i) | res';
         end
-%         % don't add force from trialing edge filiment
-%         if isTE(i) && k == 3
-%             continue;
-%         end
-%         % get the start and end of the filiment
-%         A = ringNodes(:,panels(k,i));
-%         if k == 4
-%             B = ringNodes(:,panels(1,i));
-%         else
-%             B = ringNodes(:,panels(k+1,i));
-%         end
-%         v_norm = norm(B-A);
-%         n = (B-A)./v_norm;
-% 
-%         sides = NS;
-%         if k == 2 || k == 4
-%             sides = ~sides;
-%         end
-%         % get the position of the closest N filiments
-%         
-%         idx_k = idx_p&sides;
-%         pos = filiment_pos(:,idx_k);
-%         Np = nnz(idx_k);
-%         n = repmat(n,1,Np);
-% 
-%         %get the tolerance
-%         p_i = (i-1)*4;
-%         if k == 1 || k == 3
-%            filiment_tol =  norm(filiment_pos(:,p_i+1)-filiment_pos(:,p_i+3))*tol;
-%         else
-%             filiment_tol =  norm(filiment_pos(:,p_i+2)-filiment_pos(:,p_i+4))*tol;
-%         end
-%         % get vector between current filiment and closest other filiments
-%         P_vec = n.*repmat(dot(n,pos-repmat(A,1,Np)),3,1);
-% 
-%         % find filiments that lie on the current filiment
-%         res = dot(n,P_vec)>=0 & dot(n,P_vec)<=v_norm & vecnorm(pos-(A+P_vec))<filiment_tol;
-% 
-%         % update idecies of filiments that lie on the perimeter
-%         ids(idx_k,i) = ids(idx_k,i) | res';
     end
-    %on the line
 end
 end

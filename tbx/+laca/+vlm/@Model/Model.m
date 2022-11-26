@@ -24,6 +24,7 @@ classdef Model < laca.vlm.Base
         HasFilResult = false;
         Name = '';
         Wings;
+        XZ_sym = false;
     end
     properties
         Filiment_tol = 0.2;
