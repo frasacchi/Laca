@@ -6,20 +6,23 @@ classdef Section < laca.vlm.Base
         Filiment_Force;
         Panel_Filiments;
         Vbody_func = @(U,X)zeros(size(X));
+        Flexi_func = @(U,x)x;
+        Normal_func = @(U,x)error('not implemented');
+        useNormalFunc = false;
+        U = [];
     end
-        properties(GetAccess = protected)
-            Nodes_cache;
-            Centroid_cache;
-            Midpoint_cache;
-            Normal_cache;
-            RingNodes_cache;
-            Collocation_cache;
-        end
+    properties(GetAccess = protected)
+        Nodes_cache;
+        Centroid_cache;
+        Midpoint_cache;
+        Normal_cache;
+        RingNodes_cache;
+        Collocation_cache;
+    end
     properties(SetAccess = immutable)
         base_nodes;
         base_ringNodes;
         base_FilimentPosition;
-%         base_collocation;
         base_centroid;
         base_normal;
         Panels;
@@ -75,7 +78,7 @@ classdef Section < laca.vlm.Base
         RingNodes;
         Collocation;
     end
-    methods 
+    methods
         function cp = copy(obj)
             cp = laca.vlm.Section(obj.Panels,obj.base_nodes,...
                 obj.isLE,obj.isTE,obj.Connectivity);
@@ -93,30 +96,19 @@ classdef Section < laca.vlm.Base
             val = obj.ControlSurfaces_;
         end
         function set.ControlSurfaces(obj,val)
-%             obj.ClearCache();
             obj.ControlSurfaces_ = val;
         end
         function val = get.Rot(obj)
             val = obj.Rot_;
         end
         function set.Rot(obj,val)
-%             obj.ClearCache();
             obj.Rot_ = val;
         end
         function val = get.R(obj)
             val = obj.R_;
         end
         function set.R(obj,val)
-            obj.ClearCache();
             obj.R_ = val;
-        end
-        function ClearCache(obj)
-%             obj.Nodes_cache = [];
-%             obj.Centroid_cache = [];
-%             obj.Midpoint_cache = [];
-%             obj.Normal_cache = [];
-%             obj.RingNodes_cache = [];
-%             obj.Collocation_cache = [];
         end
     end
 
@@ -142,23 +134,12 @@ classdef Section < laca.vlm.Base
             val = obj.Vbody_func(U,local_col);
         end
         function val = get.Nodes(obj)
-%             if isempty(obj.Nodes_cache)
-                val = obj.NodesLocal(obj.base_nodes);
-                val = obj.Rot*val + repmat(obj.R,1,size(val,2));
-%                 obj.Nodes_cache = val;
-%             else
-%                 val = obj.Nodes_cache;
-%             end
-            
+            val = obj.NodesLocal(obj.base_nodes);
+            val = obj.Rot*obj.Flexi_func(obj.U,val) + repmat(obj.R,1,size(val,2));
         end
         function val = get.RingNodes(obj)
-%             if isempty(obj.RingNodes_cache)
-                val = obj.NodesLocal(obj.base_ringNodes);
-                val = obj.Rot*val + repmat(obj.R,1,size(val,2));
-%                 obj.RingNodes_cache = val;
-%             else
-%                 val = obj.RingNodes_cache;
-%             end
+            val = obj.NodesLocal(obj.base_ringNodes);
+            val = obj.Rot*obj.Flexi_func(obj.U,val) + repmat(obj.R,1,size(val,2));
         end
         function val = get.Collocation(obj)
             if obj.useMEX
@@ -169,72 +150,38 @@ classdef Section < laca.vlm.Base
             for i = 1:length(obj.ControlSurfaces)
                 if ~strcmp(obj.ControlSurfaces.Name,'None') && obj.ControlSurfaces.Deflection ~= 0
                     h_nodes = obj.ControlSurfaces(i).HingeNodes;
-                    hinge = obj.base_nodes(:,h_nodes(2))-obj.base_nodes(:,h_nodes(1));
+                    tmpNodes = obj.Nodes;
+                    hinge = tmpNodes(:,h_nodes(2))-tmpNodes(:,h_nodes(1));
                     cs_nodes = obj.ControlSurfaces.Panels;
-                    origin = repmat(obj.base_nodes(:,h_nodes(1)),1,length(cs_nodes));
+                    origin = repmat(tmpNodes(:,h_nodes(1)),1,length(cs_nodes));
                     val(:,cs_nodes) = origin + farg.geom.rotateAbout(...
                         val(:,cs_nodes)-origin,repmat(hinge,1,length(cs_nodes)),...
                         obj.ControlSurfaces.Deflection);
                 end
             end
-%             val = obj.Rot*val + repmat(obj.R,1,size(val,2));
         end
-%         function val = get.Collocation(obj)
-%             if isempty(obj.Collocation_cache)
-%             val = obj.base_collocation;
-%             for i = 1:length(obj.ControlSurfaces)
-%                 if ~strcmp(obj.ControlSurfaces.Name,'None') && obj.ControlSurfaces.Deflection ~= 0
-%                     h_nodes = obj.ControlSurfaces(i).HingeNodes;
-%                     hinge = obj.base_nodes(:,h_nodes(2))-obj.base_nodes(:,h_nodes(1));
-%                     cs_nodes = obj.ControlSurfaces.Panels;
-%                     origin = repmat(obj.base_nodes(:,h_nodes(1)),1,length(cs_nodes));
-%                     val(:,cs_nodes) = origin + farg.geom.rotateAbout(...
-%                         val(:,cs_nodes)-origin,repmat(hinge,1,length(cs_nodes)),...
-%                         obj.ControlSurfaces.Deflection);
-%                 end
-%             end
-%             val = obj.Rot*val + repmat(obj.R,1,size(val,2));
-%             obj.Collocation_cache = val;
-%             else
-%                 val = obj.Collocation_cache;
-%             end
-%         end
+
         function val = get.Centroid(obj)
-%             if isempty(obj.Centroid_cache)
-                val = obj.base_centroid;
-                val = obj.Rot*val + repmat(obj.R,1,size(val,2));
-%                 obj.Centroid_cache = val;
-%             else
-%                 val = obj.Centroid_cache;
-%             end
+            val = obj.base_centroid;
+            val = obj.Rot*obj.Flexi_func(obj.U,val) + repmat(obj.R,1,size(val,2));
         end
         function val = get.Filiment_Position(obj)
-%             if isempty(obj.Centroid_cache)
-                val = obj.base_FilimentPosition;
-                val = obj.Rot*val + repmat(obj.R,1,size(val,2));
-%                 obj.Centroid_cache = val;
-%             else
-%                 val = obj.Centroid_cache;
-%             end
+            val = obj.base_FilimentPosition;
+            val = obj.Rot*obj.Flexi_func(obj.U,val) + repmat(obj.R,1,size(val,2));
         end
         function val = get.Midpoint(obj)
-%             if isempty(obj.Midpoint_cache)
-                val = zeros(3,2,obj.NPanels);
-                val(:,1,:) = reshape(sum(reshape(obj.Nodes(:,obj.Panels(1:2,:)),3,2,[]),2),3,[])./2;
-                val(:,2,:) = reshape(sum(reshape(obj.Nodes(:,obj.Panels(3:4,:)),3,2,[]),2),3,[])./2;
-%                 obj.Midpoint_cache = val;
-%             else
-%                 val = obj.Midpoint_cache;
-%             end
+            val = zeros(3,2,obj.NPanels);
+            val(:,1,:) = reshape(sum(reshape(obj.Nodes(:,obj.Panels(1:2,:)),3,2,[]),2),3,[])./2;
+            val(:,2,:) = reshape(sum(reshape(obj.Nodes(:,obj.Panels(3:4,:)),3,2,[]),2),3,[])./2;
         end
         function val = get.Normal(obj)
-%             if isempty(obj.Normal_cache)
-                val = obj.base_normal;
-                val = obj.Rot*val;
-%                 obj.Normal_cache = val;
-%             else
-%                 val = obj.Normal_cache;
-%             end
+            if obj.useNormalFunc
+                n = obj.Normal_func(obj.U,obj.base_centroid);
+                n = n./repmat(vecnorm(n),3,1);
+                val = obj.Rot*n;
+            else
+                val = obj.Rot*obj.base_normal;
+            end
         end
         function obj = Section(Panels,Nodes,isLE,isTE,Connectivity)
             %MODEL Construct an instance of this class
@@ -256,25 +203,23 @@ classdef Section < laca.vlm.Base
             obj.PanelChord = vecnorm(S-N)';
             obj.PanelSpan = vecnorm(E-W)';
             obj.base_centroid = (N+S)./2;
-            
+
             if obj.useMEX
-                obj.base_ringNodes= laca.vlm.vlm_C_code('generate_rings',Panels,Nodes);
                 obj.base_ringNodes= laca.vlm.vlm_C_code('generate_rings',Panels,Nodes);
                 obj.Area = laca.vlm.vlm_C_code('panel_area',Panels,Nodes);
                 obj.base_normal = laca.vlm.vlm_C_code('panel_normal',Panels,Nodes);
-                obj.base_FilimentPosition = laca.vlm.vlm_C_code('panel_compass',Panels,obj.base_ringNodes);  
+                obj.base_FilimentPosition = laca.vlm.vlm_C_code('panel_compass',Panels,obj.base_ringNodes);
             else
                 obj.base_ringNodes = laca.vlm.generate_rings(Panels,Nodes);
                 obj.Area = laca.vlm.panel_area(Panels,Nodes);
                 obj.base_normal = laca.vlm.panel_normal(Panels,Nodes);
-                obj.base_FilimentPosition = laca.vlm.panel_compass(Panels,obj.base_ringNodes);  
+                obj.base_FilimentPosition = laca.vlm.panel_compass(Panels,obj.base_ringNodes);
             end
 
         end
         function obj = apply_result_katz(obj,gamma,L,V,rho)
             obj.Gamma = gamma;
             obj.V = V;
-
             A = obj.Nodes(:,obj.Panels(1,:));
             B = obj.Nodes(:,obj.Panels(2,:));
             n = cross(B-A,V(obj.Centroid));

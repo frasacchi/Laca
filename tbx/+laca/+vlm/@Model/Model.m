@@ -301,30 +301,32 @@ classdef Model < laca.vlm.Base
             plt_obj = plot3(res(1,:)',res(2,:)',res(3,:)','r-');
         end
 
-        function plt_obj = draw_rings(obj,varargin)
-            p = inputParser;
-            p.addParameter('Rotate',eye(3))
-            p.addParameter('DrawTE',true)
-            p.parse(varargin{:})
+        function plt_obj = draw_rings(obj,opts)
+            arguments
+                obj
+                opts.Rotate = eye(3);
+                opts.DrawTE = true;
+                opts.LineWidth = 2; 
+            end
 
-            ringNodes = p.Results.Rotate*obj.RingNodes;
-            teNodes = p.Results.Rotate*obj.TENodes;
+            ringNodes = opts.Rotate*obj.RingNodes;
+            teNodes = opts.Rotate*obj.TENodes;
 
-            collocation = p.Results.Rotate*obj.Collocation;
+            collocation = opts.Rotate*obj.Collocation;
 
             if ~isempty(ringNodes)
                 func = @(n)reshape(ringNodes(n,obj.Panels),4,[]);
                 plt_obj(2) = patch(func(1),func(2),func(3),'b');
                 plt_obj(2).FaceAlpha = 0;
                 plt_obj(2).EdgeColor = [0 0 0];
-                plt_obj(2).LineWidth = 2;
+                plt_obj(2).LineWidth = opts.LineWidth;
 
-                if p.Results.DrawTE
+                if opts.DrawTE
                     func = @(n)reshape(teNodes(n,obj.TERings),4,[]);
                     plt_obj(3) = patch(func(1),func(2),func(3),'--');
                     plt_obj(3).FaceAlpha = 0;
                     plt_obj(3).EdgeColor = [0 0 0];
-                    plt_obj(3).LineWidth = 1;
+                    plt_obj(3).LineWidth = opts.LineWidth*0.5;
                 end
                 hold on
                 plt_obj(3) = plot3(collocation(1,:)',...
