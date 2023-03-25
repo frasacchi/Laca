@@ -1,6 +1,6 @@
-function evs = get_stability(p,U,t) %#codegen
+function [evs,vecs] = get_stability(p,U,t) %#codegen
     % call the solver
-    j = mbd.jacobiancd(@(x)p.deriv(t,x),U);
-    [~,D] = eig(j);
+    j = p.get_jacobian(U,t);
+    [vecs,D] = eig(j);
     evs = diag(D);
 end

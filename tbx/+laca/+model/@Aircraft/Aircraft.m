@@ -57,6 +57,12 @@ classdef Aircraft < handle
         function out = createStreamwiseVariant(obj,varargin)
             out = obj.applyfunc(@(x)x.createStreamwiseVariant(varargin{:}));
         end
+        function out = createStreamwiseVariantv2(obj,varargin)
+            out = obj.applyfunc(@(x)x.createStreamwiseVariantv2(varargin{:}));
+        end
+        function out = createNastranExample(obj,varargin)
+            out = obj.applyfunc(@(x)x.createNastranExample(varargin{:}));
+        end
         function out = split_sections(obj,varargin)
             out = obj.applyfunc(@(x)x.split_sections(varargin{:}));
         end

@@ -20,6 +20,8 @@ classdef Model < laca.vlm.Base
         V_i;
         V_col;
 
+        isStitch = true;
+
         HasKatzResult = false;
         HasFilResult = false;
         Name = '';

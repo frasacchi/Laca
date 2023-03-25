@@ -5,11 +5,20 @@ classdef Section < laca.vlm.Base
     properties
         Filiment_Force;
         Panel_Filiments;
+
+        isLinearDeformation = false;
+        G_col = [];
+        G_Node = [];
+        G_RingNodes = [];
+        G_fil = []
+        G_cent = [];
+
         Vbody_func = @(U,X)zeros(size(X));
         Flexi_func = @(U,x)x;
         Normal_func = @(U,x)error('not implemented');
         useNormalFunc = false;
         U = [];
+        DoFs = nan;
     end
     properties(GetAccess = protected)
         Nodes_cache;
@@ -79,6 +88,23 @@ classdef Section < laca.vlm.Base
         Collocation;
     end
     methods
+        function SetGs(obj,spline,Dofs,idx)
+            old_isLin = obj.isLinearDeformation;
+            obj.DoFs = Dofs;
+            obj.isLinearDeformation = false;
+            obj.G_col = spline.get_G(obj.Collocation,Dofs,idx);
+            obj.G_col = obj.G_col(1:3,:,:);
+            obj.G_Node = spline.get_G(obj.Nodes,Dofs,idx);
+            obj.G_Node = obj.G_Node(1:3,:,:);
+            obj.G_RingNodes = spline.get_G(obj.RingNodes,Dofs,idx);
+            obj.G_RingNodes = obj.G_RingNodes(1:3,:,:);
+            obj.G_fil = spline.get_G(obj.Filiment_Position,Dofs,idx);
+            obj.G_fil = obj.G_fil(1:3,:,:);
+            obj.G_cent = spline.get_G(obj.Centroid,Dofs,idx);
+            obj.G_cent = obj.G_cent(1:3,:,:);
+
+            obj.isLinearDeformation = old_isLin;
+        end
         function cp = copy(obj)
             cp = laca.vlm.Section(obj.Panels,obj.base_nodes,...
                 obj.isLE,obj.isTE,obj.Connectivity);
@@ -129,17 +155,32 @@ classdef Section < laca.vlm.Base
     end
 
     methods
-        function val = Vbody(obj,U)
-            local_col = laca.vlm.vlm_C_code('get_collocation',obj.Panels,obj.NodesLocal(obj.base_nodes),obj.dC_l_dalpha);
-            val = obj.Vbody_func(U,local_col);
+        function val = Vbody(obj,U)           
+            if obj.isLinearDeformation
+                val = reshape(pagemtimes(obj.G_col,obj.U(obj.DoFs+1:end)),3,[]);
+            else
+                local_col = laca.vlm.vlm_C_code('get_collocation',obj.Panels,obj.NodesLocal(obj.base_nodes),obj.dC_l_dalpha);
+                val = obj.Vbody_func(U,local_col);
+            end
         end
         function val = get.Nodes(obj)
             val = obj.NodesLocal(obj.base_nodes);
-            val = obj.Rot*obj.Flexi_func(obj.U,val) + repmat(obj.R,1,size(val,2));
+            if obj.isLinearDeformation
+                val = val + reshape(pagemtimes(obj.G_Node,obj.U(1:obj.DoFs)),3,[]);
+            else
+                val = obj.Flexi_func(obj.U,val);
+            end
+            val = obj.Rot*val + repmat(obj.R,1,size(val,2));
+            
         end
         function val = get.RingNodes(obj)
             val = obj.NodesLocal(obj.base_ringNodes);
-            val = obj.Rot*obj.Flexi_func(obj.U,val) + repmat(obj.R,1,size(val,2));
+            if obj.isLinearDeformation
+                val = val + reshape(pagemtimes(obj.G_RingNodes,obj.U(1:obj.DoFs)),3,[]);
+            else
+                val = obj.Flexi_func(obj.U,val);
+            end
+            val = obj.Rot*val + repmat(obj.R,1,size(val,2));
         end
         function val = get.Collocation(obj)
             if obj.useMEX
@@ -163,11 +204,21 @@ classdef Section < laca.vlm.Base
 
         function val = get.Centroid(obj)
             val = obj.base_centroid;
-            val = obj.Rot*obj.Flexi_func(obj.U,val) + repmat(obj.R,1,size(val,2));
+            if obj.isLinearDeformation
+                val = val + reshape(pagemtimes(obj.G_cent,obj.U(1:obj.DoFs)),3,[]);
+            else
+                val = obj.Flexi_func(obj.U,val);
+            end
+            val = obj.Rot*val + repmat(obj.R,1,size(val,2));
         end
         function val = get.Filiment_Position(obj)
             val = obj.base_FilimentPosition;
-            val = obj.Rot*obj.Flexi_func(obj.U,val) + repmat(obj.R,1,size(val,2));
+            if obj.isLinearDeformation
+                val = val + reshape(pagemtimes(obj.G_fil,obj.U(1:obj.DoFs)),3,[]);
+            else
+                val = obj.Flexi_func(obj.U,val);
+            end
+            val = obj.Rot*val + repmat(obj.R,1,size(val,2));
         end
         function val = get.Midpoint(obj)
             val = zeros(3,2,obj.NPanels);
