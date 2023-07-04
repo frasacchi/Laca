@@ -162,6 +162,21 @@ classdef Model < laca.vlm.Base
         function val = get.dC_l_dalpha(obj)
             val = cat(1,obj.Wings.dC_l_dalpha);
         end
+        function val = get.StripIDs(obj)
+            Con = obj.Connectivity;
+            idx = 1;
+            val = {};
+            for i = 1:size(Con,2)
+                if isnan(Con(1,i))
+                    strip = [i];
+                    while ~isnan(Con(3,strip(end)))
+                        strip = [strip,Con(3,strip(end))];
+                    end
+                    val{idx} = strip;
+                    idx = idx + 1;
+                end
+            end
+        end
     end
 
     methods
