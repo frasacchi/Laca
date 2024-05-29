@@ -232,6 +232,11 @@ classdef Section < laca.vlm.Base
                 n = n./repmat(vecnorm(n),3,1);
                 val = obj.Rot*n;
             else
+                if obj.useMEX
+                    obj.base_normal = laca.vlm.vlm_C_code('panel_normal',obj.Panels,obj.Nodes);
+                else
+                    obj.base_normal = laca.vlm.panel_normal(obj.Panels,obj.Nodes);
+                end
                 val = obj.Rot*obj.base_normal;
             end
         end
