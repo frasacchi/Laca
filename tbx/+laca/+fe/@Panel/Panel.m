@@ -10,11 +10,14 @@ properties
     ClFactor2;
     CmFactor1;
     CmFactor2;
-    Density;
+    cDensity;
+    sDensity;
     SplineSet;
     ID;
     Name;
     IGID;
+    SETG = 0;
+    PAero = 999;
 end
 
 properties(Dependent = true)
@@ -28,60 +31,110 @@ properties(Dependent = true)
 end
 
 methods
-    function obj = Panel(X1,X2,Chord1,Chord2,varargin)
-        %PANEL Construct an instance of this class
-        %   Detailed explanation goes here
-        p = inputParser;
-        p.addParameter('Density',0.02);
-        p.addParameter('SplineSet',[]);
-        p.addParameter('ID',[]);
-        p.addParameter('Name',[]);
-        p.addParameter('IGID',999);
-        p.addParameter('Normalwash1',0)
-        p.addParameter('Normalwash2',0)
-        p.addParameter('ClFactor1',1)
-        p.addParameter('ClFactor2',1)
-        p.addParameter('CmFactor1',1)
-        p.addParameter('CmFactor2',1)
-        p.parse(varargin{:})
-
-        for name = string(p.Parameters)
-        obj.(name) = p.Results.(name);
+    function obj = Panel(X1,X2,Chord1,Chord2,opts)
+        arguments
+            X1 double
+            X2 double
+            Chord1 double
+            Chord2 double
+            opts.cDensity double = 0.02
+            opts.sDensity double = 0.02
+            opts.SplineSet double = []
+            opts.ID double = []
+            opts.Name char = ''
+            opts.IGID double = 999
+            opts.Normalwash1 double = 0
+            opts.Normalwash2 double = 0
+            opts.ClFactor1 double = 1
+            opts.ClFactor2 double = 1
+            opts.CmFactor1 double = 1
+            opts.CmFactor2 double = 1
+            opts.NSpan = 0
+            opts.NChord = 0
         end
-
         obj.X1 = X1;
         obj.X2 = X2;
         obj.Chord1 = Chord1;
         obj.Chord2 = Chord2;
+        obj.cDensity = opts.cDensity;
+        obj.sDensity = opts.sDensity;
+        obj.SplineSet = opts.SplineSet;
+        obj.ID = opts.ID;
+        obj.Name = opts.Name;
+        obj.IGID = opts.IGID;
+        obj.Normalwash1 = opts.Normalwash1;
+        obj.Normalwash2 = opts.Normalwash2;
+        obj.ClFactor1 = opts.ClFactor1;
+        obj.ClFactor2 = opts.ClFactor2;
+        obj.CmFactor1 = opts.CmFactor1;
+        obj.CmFactor2 = opts.CmFactor2;
+        if opts.NSpan > 0
+            obj.sDensity = norm(obj.X2(2:3)-obj.X1(2:3))/opts.NSpan;
+        end
+        if opts.NChord > 0
+            obj.cDensity = mean([obj.Chord1,obj.Chord2])/opts.NChord;
+        end
     end
     
     function cards = generate_aero_cards(obj)   
         cards = mni.printing.cards.BaseCard.empty;
-        cards(end+1) = mni.printing.cards.PAERO1(obj.ID);
-        cards(end+1) = mni.printing.cards.CAERO1(obj.ID,obj.ID,...
+        if obj.PAero == 0
+            cards(end+1) = mni.printing.cards.PAERO1(obj.ID);
+        end
+        paero = obj.PAero
+        cards(end+1) = mni.printing.cards.CAERO1(obj.ID,paero,...
             obj.X1,obj.X2,obj.Chord1,obj.Chord2,obj.IGID,...
             'NSPAN',obj.NSpan,'NCHORD',obj.NChord);
     end
-    
-    function cards = generate_spline_cards(obj)
-        cards = mni.printing.cards.BaseCard.empty;
-        cards(end+1) = mni.printing.cards.SET1(obj.ID+1e6,obj.SplineSet);
-%         cards(end+1) = mni.printing.cards.SPLINE1(obj.ID+1e6,'CAERO',obj.ID,...
-%             'BOX1',obj.ID,'BOX2',obj.ID+obj.NPanels-1,'SETG',obj.ID+1e6);
-
-        cards(end+1) = mni.printing.cards.AELIST(obj.ID+1e6+1,obj.IDs);
-        cards(end+1) = mni.printing.cards.SPLINE4(obj.ID+1e6,...
-            obj.ID,obj.ID+1e6+1,obj.ID+1e6);
+    function cards = generate_spline1_cards(obj,varargin)
+        cards = mni.printing.cards.SPLINE1(obj.ID,'CAERO',obj.ID,...
+            'BOX1',obj.ID,'BOX2',obj.ID+obj.NPanels-1,'SETG',obj.SETG,varargin{;});
     end
-    
+    function cards = generate_spline4_cards(obj,varargin)
+        cards(1) = mni.printing.cards.AELIST(obj.ID,obj.IDs);
+        cards(2) = mni.printing.cards.SPLINE4(obj.ID,...
+            obj.ID,obj.ID,obj.SETG,varargin{:});
+    end
+    function cards = generate_spline6_cards(obj,varargin)
+        cards(1) = mni.printing.cards.AELIST(obj.ID,obj.IDs);
+        cards(2) = mni.printing.cards.SPLINE6(obj.ID,...
+            obj.ID,obj.ID,obj.SETG,varargin{:});
+    end   
+end
+methods
+    function obj = UpdateDensity(obj,opts)
+        arguments
+            obj
+            opts.Independent = 'Chord'
+            opts.N = 10;
+            opts.Density = 0;
+            opts.AspectRatio = 1;
+        end
+        switch opts.Independent
+            case 'Chord'
+                if opts.Density > 0
+                    obj.cDensity = opts.Density;
+                else
+                    obj.cDensity = mean([obj.Chord1,obj.Chord2])/opts.N;
+                end
+                obj.sDensity = mean([obj.Chord1,obj.Chord2]) / obj.NChord * opts.AspectRatio;
+            case 'Span'
+                if opts.Density > 0
+                    obj.sDensity = opts.Density;
+                else
+                    obj.sDensity = norm(obj.X2(2:3)-obj.X1(2:3))/opts.N;
+                end
+                obj.cDensity = norm(obj.X2(2:3)-obj.X1(2:3)) / obj.NSpan / opts.AspectRatio;
+        end
+    end
 end
 
 methods
     function out = get.NSpan(obj)
-        out = ceil(norm(obj.X2(2:3)-obj.X1(2:3))/obj.Density);
+        out = ceil(norm(obj.X2(2:3)-obj.X1(2:3))/obj.sDensity);
     end
     function out = get.NChord(obj)
-        out = ceil(mean([obj.Chord1,obj.Chord2])/obj.Density);
+        out = ceil(mean([obj.Chord1,obj.Chord2])/obj.cDensity);
     end
     function out = get.NPanels(obj)
         out = obj.NSpan * obj.NChord;

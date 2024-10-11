@@ -1,4 +1,4 @@
-classdef Aircraft < matlab.mixin.Copyable
+classdef Aircraft < handle
     %AIRCRAFT Summary of this class goes here
     %   Detailed explanation goes here
     
@@ -8,17 +8,27 @@ classdef Aircraft < matlab.mixin.Copyable
     end
     
     methods
+        function cp = copy(obj)
+            cp = laca.model.Aircraft(cellfun(@(x)x.copy,obj.Wings,'UniformOutput',false));
+            cp.name = obj.Name;
+        end
         function obj = Aircraft(Wings)
+            if ~iscell(Wings)
+                error('Input must be a cell array of wings')
+            end
+            for i = 1:length(Wings)
+                if ~isa(Wings{i},'laca.model.Wing')
+                    error('Input must be a cell array of wings')
+                end
+            end
             obj.Wings = Wings;
         end
         
         function obj = Rotate(obj,mat)
             for i = 1:length(obj.Wings)
-               for j = 1:length(obj.Wings(i).WingSections)
-                   obj.Wings(i).WingSections(j).LE = mat * ...
-                       obj.Wings(i).WingSections(j).LE;
-                   obj.Wings(i).WingSections(j).TE = mat * ...
-                       obj.Wings(i).WingSections(j).TE;
+               for j = 1:length(obj.Wings{i}.WingSections)
+                   obj.Wings{i}.WingSections{j}.R = mat*obj.Wings{i}.WingSections{j}.R;
+                   obj.Wings{i}.WingSections{j}.Rot = mat*obj.Wings{i}.WingSections{j}.Rot;
                end
             end
         end
@@ -39,13 +49,19 @@ classdef Aircraft < matlab.mixin.Copyable
             end
         end
         function out = draw(obj,varargin)
-            out = arrayfun(@(x)x.draw(varargin{:}),obj.Wings);
+            out = cellfun(@(x)x.draw(varargin{:}),obj.Wings);
         end
         function out = ApplySplineSet(obj,varargin)
             out = obj.applyfunc(@(x)x.ApplySplineSet(varargin{:}));
         end
         function out = createStreamwiseVariant(obj,varargin)
             out = obj.applyfunc(@(x)x.createStreamwiseVariant(varargin{:}));
+        end
+        function out = createStreamwiseVariantv2(obj,varargin)
+            out = obj.applyfunc(@(x)x.createStreamwiseVariantv2(varargin{:}));
+        end
+        function out = createNastranExample(obj,varargin)
+            out = obj.applyfunc(@(x)x.createNastranExample(varargin{:}));
         end
         function out = split_sections(obj,varargin)
             out = obj.applyfunc(@(x)x.split_sections(varargin{:}));
@@ -54,7 +70,7 @@ classdef Aircraft < matlab.mixin.Copyable
             out = obj.applyfunc(@(x)x.split_chordwise(varargin{:}));
         end
         function out = applyfunc(obj,func,varargin)
-            wings = arrayfun(@(wing)func(wing,varargin{:}),obj.Wings);
+            wings = cellfun(@(wing)func(wing,varargin{:}),obj.Wings,'UniformOutput',false);
             out = laca.model.Aircraft(wings);
         end
         

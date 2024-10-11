@@ -7,6 +7,9 @@ classdef Point
     end
     
     methods
+%         function cp = copy(obj)
+%             cp = laca.model.Point(obj.X);
+%         end
         function obj = Point(X)
             %POINT Construct an instance of this class
             %   Detailed explanation goes here

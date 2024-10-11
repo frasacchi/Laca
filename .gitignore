@@ -1,4 +1,5 @@
 
+**/codegen/**/*.*
 *.asv
 
 *.awi
@@ -46,3 +47,7 @@ bin/*
 */bin/**
 
 .vscode/
+
+*.mexw64
+
+*/codegen/**
