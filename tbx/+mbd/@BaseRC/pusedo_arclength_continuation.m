@@ -1,5 +1,5 @@
-function res = pusedo_arclength_continuation(obj,Ui,params,p_idx,p_lim,p_dir,arc_lim,arclength_ic,Nmax,...
-    p_names,RunStability,StopOnStability)
+function res = pusedo_arclength_continuation(obj,Ui,params,p_idx,p_lim,p_dir,arc_lim,dp_lim,arclength_ic,Nmax,...
+    p_names,RunStability,StopOnStability,q_idx,out_idx)
 %CONTINUATION Summary of this function goes here
 %   Detailed explanation goes here
 ps = zeros(1,Nmax);
@@ -11,15 +11,15 @@ res = struct();
 % get initial position
 ps(1) = params(p_idx);
 obj.set_parameters(params);
-[Us(:,1),deriv] = find_equilibrium(obj,Ui,0);
-if sum(abs(deriv))>1e-3
+[Us(:,1),deriv] = find_equilibrium(obj,Ui,0,q_idx,out_idx);
+if sum(abs(deriv(out_idx)))>1e-3
     error('could not find initial equilibirum position')
 end
 res = save_res(obj,res,1,Us(:,1),params,p_names,RunStability);
-res(1).Equilbrium =  sum(abs(deriv))<1e-3;
+res(1).Equilbrium =  sum(abs(deriv(out_idx)))<1e-3;
 i = 2;
 isError = false;
-while i<=Nmax && all(params(p_idx)<p_lim(:,2)') && all(params(p_idx)>p_lim(:,1)')
+while i<=Nmax && (i==2 || (all(params(p_idx)<p_lim(:,2)') && all(params(p_idx)>p_lim(:,1)')))
     if i == 2
         grad =  [zeros(N,1);p_dir];
         arc = norm(grad);
@@ -35,7 +35,9 @@ while i<=Nmax && all(params(p_idx)<p_lim(:,2)') && all(params(p_idx)>p_lim(:,1)'
     deriv = inf;
     err = inf;
     new_arc = inf;
-    while err > arc_lim(1)*0.3 || new_arc > arc_lim(2) || sum(abs(deriv))>1e-3
+    ps(:,i) = inf;
+    dp = inf(length(p_idx),1);
+    while err > arc*0.05 || new_arc > arc_lim(2) || sum(abs(deriv(out_idx)))>1e-3 || any(abs(ps(:,i)-ps(:,i-1))>dp_lim(:,2))
         if Niter > 100
             isError = true;
             break;
@@ -45,24 +47,87 @@ while i<=Nmax && all(params(p_idx)<p_lim(:,2)') && all(params(p_idx)>p_lim(:,1)'
                 isError = true;
                 break;
             end
+            if any(dp<dp_lim(:,1))
+                isError = true;
+                break;
+            end
         end
         stepsize =  arc.*grad;
         ps(:,i) = ps(:,i-1) + stepsize(N+1:end);
+        % check if outside limits
+        [~,maxI] = min([ps(:,i),p_lim(:,2)],[],2);
+        [~,minI] = max([ps(:,i),p_lim(:,1)],[],2);
+        [~,minPI] = max([abs(ps(:,i)-ps(:,i-1)),dp_lim(:,1)],[],2);
+        [~,maxPI] = min([abs(ps(:,i)-ps(:,i-1)),dp_lim(:,2)],[],2);
+        idx = minI==2 | maxI==2 | minPI==2 | maxPI==2;
+        if nnz(idx)
+            Fopts = optimset('Diagnostics','off', 'Display','off');
+            if nnz(minI==2)
+                idx = minI==2;
+                idx_grad = (N+1):length(grad);
+                idx_grad = idx_grad(idx);
+                p_tmp = @(x) ps(idx,i-1) + x.*grad(idx_grad) - p_lim(idx,1);
+                arc = fsolve(p_tmp,arc,Fopts);
+                stepsize =  arc.*grad;
+                ps(:,i) = ps(:,i-1) + stepsize(N+1:end);
+                ps(idx,i) = p_lim(idx,1);
+            elseif nnz(maxI==2)
+                idx = maxI==2;
+                idx_grad = (N+1):length(grad);
+                idx_grad = idx_grad(idx);
+                p_tmp = @(x) ps(idx,i-1) + x.*grad(idx_grad) - p_lim(idx,2);
+                arc = fsolve(p_tmp,arc,Fopts);
+                stepsize =  arc.*grad;
+                ps(:,i) = ps(:,i-1) + stepsize(N+1:end);
+                ps(idx,i) = p_lim(idx,2);
+            elseif nnz(minPI==2)
+                idx = minPI==2;
+                idx_grad = (N+1):length(grad);
+                idx_grad = idx_grad(idx);
+                p_tmp = @(x) abs(x.*grad(idx_grad)) - dp_lim(idx,1);
+                arc = fsolve(p_tmp,arc,Fopts);
+                stepsize =  arc.*grad;
+                stepsize(idx_grad) = sign(stepsize(idx_grad)).*dp_lim(idx,1);
+                ps(:,i) = ps(:,i-1) + stepsize(N+1:end);
+            else
+                idx = maxPI==2;
+                idx_grad = (N+1):length(grad);
+                idx_grad = idx_grad(idx);
+                p_tmp = @(x) abs(x.*grad(idx_grad)) - dp_lim(idx,2);
+                arc = fsolve(p_tmp,arc,Fopts);
+                stepsize =  arc.*grad;
+                stepsize(idx_grad) = sign(stepsize(idx_grad)).*dp_lim(idx,2);
+                ps(:,i) = ps(:,i-1) + stepsize(N+1:end);
+            end
+        end
+        %get next reult
         params(p_idx) = ps(:,i);
         obj.set_parameters(params);
         Ui = Us(:,i-1) + stepsize(1:N);
-        [Us(:,i),deriv] = find_equilibrium(obj,Ui,0);
+        try
+            [Us(:,i),deriv] = find_equilibrium(obj,Ui,0,q_idx,out_idx);
+        catch
+            isError = true;
+            break
+        end
         grad = [Us(:,i)-Us(:,i-1);ps(:,i)-ps(:,i-1)];
         new_arc = norm(grad);
         err =  norm(Us(:,i) - Ui);
+        dp = abs(ps(:,i)-ps(:,i-1));
         Niter = Niter + 1;
-    end   
+        if err>arc*0.05 && minPI==2
+            break
+        end
+    end 
+    
+
     if isError
         res(i-1).isEnd = isError;
         break;
     end
+    % save
     res = save_res(obj,res,i,Us(:,i),params,p_names,RunStability);
-    res(i).Equilbrium =  sum(abs(deriv))<1e-3;
+    res(i).Equilbrium =  sum(abs(deriv(out_idx)))<1e-3;
     res(i).isEnd = false;
     if RunStability && StopOnStability && ~res(i).Stable
         break
@@ -71,8 +136,8 @@ while i<=Nmax && all(params(p_idx)<p_lim(:,2)') && all(params(p_idx)>p_lim(:,1)'
 end
 end
 
-function [U,deriv] = find_equilibrium(obj,Ui,t)
-    [U,deriv] = obj.find_equilibrium(Ui,t);
+function [U,deriv] = find_equilibrium(obj,Ui,t,q_idx,out_idx)
+    [U,deriv] = obj.find_equilibrium(Ui,t,q_idx=q_idx,out_idx=out_idx);
 end
 
 % function [U,deriv] = find_equilibrium(obj,U,t)

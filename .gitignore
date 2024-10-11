@@ -49,3 +49,5 @@ bin/*
 .vscode/
 
 *.mexw64
+
+*/codegen/**

@@ -15,8 +15,10 @@ classdef Section < laca.vlm.Base
 
         Vbody_func = @(U,X)zeros(size(X));
         Flexi_func = @(U,x)x;
+        Stitch_func = @(U,x)x;
         Normal_func = @(U,x)error('not implemented');
         useNormalFunc = false;
+        updateNormal = true;
         U = [];
         DoFs = nan;
     end
@@ -156,7 +158,7 @@ classdef Section < laca.vlm.Base
     end
 
     methods
-        function val = Vbody(obj,U)           
+        function val = Vbody(obj,U)
             if obj.isLinearDeformation
                 val = reshape(pagemtimes(obj.G_col,obj.U(obj.DoFs+1:end)),3,[]);
             else
@@ -172,7 +174,7 @@ classdef Section < laca.vlm.Base
                 val = obj.Flexi_func(obj.U,val);
             end
             val = obj.Rot*val + repmat(obj.R,1,size(val,2));
-            
+            val = obj.Stitch_func(obj.U,val);
         end
         function val = get.RingNodes(obj)
             val = obj.NodesLocal(obj.base_ringNodes);
@@ -182,6 +184,7 @@ classdef Section < laca.vlm.Base
                 val = obj.Flexi_func(obj.U,val);
             end
             val = obj.Rot*val + repmat(obj.R,1,size(val,2));
+            val = obj.Stitch_func(obj.U,val);
         end
         function val = get.Collocation(obj)
             if obj.useMEX
@@ -211,6 +214,7 @@ classdef Section < laca.vlm.Base
                 val = obj.Flexi_func(obj.U,val);
             end
             val = obj.Rot*val + repmat(obj.R,1,size(val,2));
+            % val = obj.Stitch_func(obj.U,val);
         end
         function val = get.Filiment_Position(obj)
             val = obj.base_FilimentPosition;
@@ -220,6 +224,7 @@ classdef Section < laca.vlm.Base
                 val = obj.Flexi_func(obj.U,val);
             end
             val = obj.Rot*val + repmat(obj.R,1,size(val,2));
+            val = obj.Stitch_func(obj.U,val);
         end
         function val = get.Midpoint(obj)
             val = zeros(3,2,obj.NPanels);
@@ -227,17 +232,21 @@ classdef Section < laca.vlm.Base
             val(:,2,:) = reshape(sum(reshape(obj.Nodes(:,obj.Panels(3:4,:)),3,2,[]),2),3,[])./2;
         end
         function val = get.Normal(obj)
-            if obj.useNormalFunc
-                n = obj.Normal_func(obj.U,obj.base_centroid);
-                n = n./repmat(vecnorm(n),3,1);
-                val = obj.Rot*n;
-            else
-                if obj.useMEX
-                    obj.base_normal = laca.vlm.vlm_C_code('panel_normal',obj.Panels,obj.Nodes);
-                else
-                    obj.base_normal = laca.vlm.panel_normal(obj.Panels,obj.Nodes);
-                end
+            if ~obj.updateNormal
                 val = obj.Rot*obj.base_normal;
+            else
+                if obj.useNormalFunc
+                    n = obj.Normal_func(obj.U,obj.base_centroid);
+                    n = n./repmat(vecnorm(n),3,1);
+                    val = obj.Rot*n;
+                else
+                    if obj.useMEX
+                        obj.base_normal = laca.vlm.vlm_C_code('panel_normal',obj.Panels,obj.Nodes);
+                    else
+                        obj.base_normal = laca.vlm.panel_normal(obj.Panels,obj.Nodes);
+                    end
+                    val = obj.base_normal;
+                end            
             end
         end
         function obj = Section(Panels,Nodes,isLE,isTE,Connectivity)
