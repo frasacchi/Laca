@@ -216,7 +216,7 @@ classdef Model < laca.vlm.Base
         function obj = set_panel_filiments(obj)
             if obj.useMEX
                 [obj.Filiment_Position,obj.Panel_Filiments] = ...
-                    laca.vlm.vlm_C_code('get_perimeter_filiments',...
+                    laca.vlm.vlm_C_code('laca.vlm.get_perimeter_filiments',...
                     obj.Panels,obj.RingNodes,obj.Filiment_tol,obj.isTE);
             else
                 [obj.Filiment_Position,obj.Panel_Filiments] = ...
@@ -256,7 +256,7 @@ classdef Model < laca.vlm.Base
                 obj.V_col = obj.V(obj.Collocation);
             end
             if obj.useMEX
-                obj.Gamma = laca.vlm.vlm_C_code('get_gamma',obj.V_col,obj.Normal,obj.Normalwash,obj.AIC);
+                obj.Gamma = laca.vlm.vlm_C_code('laca.vlm.get_gamma',obj.V_col,obj.Normal,obj.Normalwash,obj.AIC);
             else
                 obj.Gamma = laca.vlm.get_gamma(obj.V_col,obj.Normal,obj.Normalwash,obj.AIC);
             end
