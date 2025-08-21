@@ -10,6 +10,7 @@ n=numel(x);                     % size of independent
 m=numel(z);                     % size of dependent
 A=zeros(m,n);                   % allocate memory for the Jacobian matrix
 h=n*eps;                        % differentiation step size
+% h = 1;
 xs = eye(n)*h*1i;
 for k=1:n                       % loop for each independent variable
     A(:,k)=imag(fun(x+xs(:,k)));     % complex step differentiation

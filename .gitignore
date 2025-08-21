@@ -1,5 +1,7 @@
 
 **/codegen/**/*.*
+**/codegen/**
+*/codegen/*
 *.asv
 
 *.awi
