@@ -3,7 +3,7 @@ function generate_rings(obj)
 %   Detailed explanation goes here
 % if obj.useMEX
 %     [obj.base_ringNodes,~,obj.base_collocation] = ...
-%         laca.vlm.vlm_C_code('generate_rings',obj.Panels,obj.base_nodes);
+%         laca.vlm.vlm_C_code('laca.vlm.generate_rings',obj.Panels,obj.base_nodes);
 % else
 %     [obj.base_ringNodes,~,obj.base_collocation] = ...
 %         laca.vlm.generate_rings(obj.Panels,obj.base_nodes);

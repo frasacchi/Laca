@@ -19,7 +19,7 @@ else
 end
 F_wings = sum(F_tmp,2);
 if obj.useMEX
-    M = laca.vlm.vlm_C_code('get_moment',F_tmp,arm,p(:));
+    M = laca.vlm.vlm_C_code('laca.vlm.get_moment',F_tmp,arm,p(:));
 else
     M = laca.vlm.get_moment(F_tmp,arm,p(:));
 end

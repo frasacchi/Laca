@@ -162,7 +162,7 @@ classdef Section < laca.vlm.Base
             if obj.isLinearDeformation
                 val = reshape(pagemtimes(obj.G_col,obj.U(obj.DoFs+1:end)),3,[]);
             else
-                local_col = laca.vlm.vlm_C_code('get_collocation',obj.Panels,obj.NodesLocal(obj.base_nodes),obj.dC_l_dalpha);
+                local_col = laca.vlm.vlm_C_code('laca.vlm.get_collocation',obj.Panels,obj.NodesLocal(obj.base_nodes),obj.dC_l_dalpha);
                 val = obj.Vbody_func(U,local_col);
             end
         end
@@ -188,7 +188,7 @@ classdef Section < laca.vlm.Base
         end
         function val = get.Collocation(obj)
             if obj.useMEX
-                val = laca.vlm.vlm_C_code('get_collocation',obj.Panels,obj.Nodes,obj.dC_l_dalpha);
+                val = laca.vlm.vlm_C_code('laca.vlm.get_collocation',obj.Panels,obj.Nodes,obj.dC_l_dalpha);
             else
                 val = laca.vlm.get_collocation(obj.Panels,obj.Nodes,obj.dC_l_dalpha);
             end
@@ -241,7 +241,7 @@ classdef Section < laca.vlm.Base
                     val = obj.Rot*n;
                 else
                     if obj.useMEX
-                        obj.base_normal = laca.vlm.vlm_C_code('panel_normal',obj.Panels,obj.Nodes);
+                        obj.base_normal = laca.vlm.vlm_C_code('laca.vlm.panel_normal',obj.Panels,obj.Nodes);
                     else
                         obj.base_normal = laca.vlm.panel_normal(obj.Panels,obj.Nodes);
                     end
@@ -271,10 +271,10 @@ classdef Section < laca.vlm.Base
             obj.base_centroid = (N+S)./2;
 
             if obj.useMEX
-                obj.base_ringNodes= laca.vlm.vlm_C_code('generate_rings',Panels,Nodes);
-                obj.Area = laca.vlm.vlm_C_code('panel_area',Panels,Nodes);
-                obj.base_normal = laca.vlm.vlm_C_code('panel_normal',Panels,Nodes);
-                obj.base_FilimentPosition = laca.vlm.vlm_C_code('panel_compass',Panels,obj.base_ringNodes);
+                obj.base_ringNodes= laca.vlm.vlm_C_code('laca.vlm.generate_rings',Panels,Nodes);
+                obj.Area = laca.vlm.vlm_C_code('laca.vlm.panel_area',Panels,Nodes);
+                obj.base_normal = laca.vlm.vlm_C_code('laca.vlm.panel_normal',Panels,Nodes);
+                obj.base_FilimentPosition = laca.vlm.vlm_C_code('laca.vlm.panel_compass',Panels,obj.base_ringNodes);
             else
                 obj.base_ringNodes = laca.vlm.generate_rings(Panels,Nodes);
                 obj.Area = laca.vlm.panel_area(Panels,Nodes);
@@ -295,7 +295,7 @@ classdef Section < laca.vlm.Base
             obj.Filiment_Force = [];
             if obj.useMEX
                 [obj.N,obj.D,obj.S,obj.L,obj.P,obj.Lprime,obj.Cp,obj.Cl,obj.Cd]...
-                    = laca.vlm.vlm_C_code('apply_result',Fs,V(obj.Centroid),obj.Normal,obj.Area,rho);
+                    = laca.vlm.vlm_C_code('laca.vlm.apply_result',Fs,V(obj.Centroid),obj.Normal,obj.Area,rho);
             else
                 [obj.N,obj.D,obj.S,obj.L,obj.P,obj.Lprime,obj.Cp,obj.Cl,obj.Cd]...
                     = laca.vlm.apply_result(Fs,V(obj.Centroid),obj.Normal,obj.Area,rho);
