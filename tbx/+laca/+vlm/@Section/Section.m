@@ -207,15 +207,15 @@ classdef Section < laca.vlm.Base
         end
 
         function val = get.Centroid(obj)
-            val = obj.base_centroid;
-            if obj.isLinearDeformation
-                val = val + reshape(pagemtimes(obj.G_cent,obj.U(1:obj.DoFs)),3,[]);
-            else
-                val = obj.Flexi_func(obj.U,val);
-            end
-            val = obj.Rot*val + repmat(obj.R,1,size(val,2));
+
+            N = reshape(sum(reshape(obj.Nodes(:,obj.Panels(1:2,:)),3,2,[]),2),3,[])./2;
+            S = reshape(sum(reshape(obj.Nodes(:,obj.Panels(3:4,:)),3,2,[]),2),3,[])./2;
+            val = (N+S)./2;
+
+            % val = squeeze(sum(obj.Midpoint,2))./2;
             % val = obj.Stitch_func(obj.U,val);
         end
+
         function val = get.Filiment_Position(obj)
             val = obj.base_FilimentPosition;
             if obj.isLinearDeformation
