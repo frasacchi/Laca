@@ -7,6 +7,8 @@ classdef Section < laca.vlm.Base
         Panel_Filiments;
 
         isLinearDeformation = false;
+        useSuperNodes = false;
+        isClampedRoot = false;
         G_col = [];
         G_Node = [];
         G_RingNodes = [];
@@ -15,6 +17,8 @@ classdef Section < laca.vlm.Base
 
         Vbody_func = @(U,X)zeros(size(X));
         Flexi_func = @(U,x)x;
+        Skel_func = @(U,x)x;
+        A_func = @(U)eye(3);
         Stitch_func = @(U,x)x;
         Normal_func = @(U,x)error('not implemented');
         useNormalFunc = false;
@@ -33,6 +37,10 @@ classdef Section < laca.vlm.Base
     % properties(SetAccess = immutable)
     properties
         base_nodes;
+        super_base_nodes;
+        super_connectivity;
+        % super_connectivity_RingNodes;
+        % super_connectivity_FilimentPosition;
         base_ringNodes;
         base_FilimentPosition;
         base_centroid;
@@ -51,7 +59,7 @@ classdef Section < laca.vlm.Base
         dC_l_dalpha;
         Normalwash;
         Connectivity;
-        Name = '';
+        Tag = '';
     end
 
     properties
@@ -75,6 +83,7 @@ classdef Section < laca.vlm.Base
         Rot_ = eye(3);
         R_ = zeros(3,1);
     end
+
     properties(Dependent)
         ControlSurfaces
         Rot
@@ -84,12 +93,14 @@ classdef Section < laca.vlm.Base
     properties(Dependent)
         Filiment_Position;
         Nodes;
+        SuperNodes;
         Centroid;
         Midpoint;
         Normal;
         RingNodes;
         Collocation;
     end
+
     methods
         function SetGs(obj,spline,Dofs,idx)
             old_isLin = obj.isLinearDeformation;
@@ -113,7 +124,7 @@ classdef Section < laca.vlm.Base
                 obj.isLE,obj.isTE,obj.Connectivity);
             cp.Filiment_Force = obj.Filiment_Force;
             cp.Panel_Filiments = obj.Panel_Filiments;
-            cp.Name = obj.Name;
+            cp.Tag = obj.Tag;
             cp.Normalwash = obj.Normalwash;
             cp.Vbody_func = obj.Vbody_func;
             cp.R_ = obj.R_;
@@ -162,12 +173,44 @@ classdef Section < laca.vlm.Base
             if obj.isLinearDeformation
                 val = reshape(pagemtimes(obj.G_col,obj.U(obj.DoFs+1:end)),3,[]);
             else
-                local_col = laca.vlm.vlm_C_code('laca.vlm.get_collocation',obj.Panels,obj.NodesLocal(obj.base_nodes),obj.dC_l_dalpha);
+                if obj.useMEX
+                    local_col = laca.vlm.vlm_C_code('laca.vlm.get_collocation',obj.Panels,obj.NodesLocal(obj.base_nodes),obj.dC_l_dalpha);
+                else
+                    local_col = laca.vlm.get_collocation(obj.Panels,obj.NodesLocal(obj.base_nodes),obj.dC_l_dalpha);
+                end
                 val = obj.Vbody_func(U,local_col);
+                
             end
         end
+
         function val = get.Nodes(obj)
             val = obj.NodesLocal(obj.base_nodes);
+            if obj.isLinearDeformation
+                val = val + reshape(pagemtimes(obj.G_Node,obj.U(1:obj.DoFs)),3,[]);
+                val = obj.Rot*val + repmat(obj.R,1,size(val,2));
+                val = obj.Stitch_func(obj.U,val);
+
+            elseif obj.useSuperNodes
+                % val = zeros(3,size(obj.base_nodes,2));
+                rot = obj.Skel_func(obj.U,obj.SuperNodes);
+
+                for i = 1+obj.isClampedRoot:size(obj.SuperNodes,2)       
+                    idx = i:size(obj.SuperNodes,2):size(obj.base_nodes,2);
+                    % R = obj.Skel_func(obj.U,obj.SuperNodes(:,i));
+                    % val(:,idx) = obj.SuperNodes(:,i) + dcrg.roty(atan2(-R(3,1), sqrt(R(3,2)^2 + R(3,3)^2)))*obj.super_connectivity(:,:,i);
+                    val(:,idx) = obj.SuperNodes(:,i) + dcrg.roty(rot(i))*obj.A_func(obj.U)*obj.super_connectivity(:,:,i);
+                end
+
+            else
+                val = obj.Flexi_func(obj.U,val);
+                val = obj.Rot*val + repmat(obj.R,1,size(val,2));
+                val = obj.Stitch_func(obj.U,val);
+            end
+
+        end
+
+        function val = get.SuperNodes(obj)
+            val = obj.NodesLocal(obj.super_base_nodes);
             if obj.isLinearDeformation
                 val = val + reshape(pagemtimes(obj.G_Node,obj.U(1:obj.DoFs)),3,[]);
             else
@@ -176,16 +219,27 @@ classdef Section < laca.vlm.Base
             val = obj.Rot*val + repmat(obj.R,1,size(val,2));
             val = obj.Stitch_func(obj.U,val);
         end
+
         function val = get.RingNodes(obj)
             val = obj.NodesLocal(obj.base_ringNodes);
             if obj.isLinearDeformation
                 val = val + reshape(pagemtimes(obj.G_RingNodes,obj.U(1:obj.DoFs)),3,[]);
+                val = obj.Rot*val + repmat(obj.R,1,size(val,2));
+                val = obj.Stitch_func(obj.U,val);
+            elseif obj.useSuperNodes
+                if obj.useMEX
+                    val = laca.vlm.vlm_C_code('laca.vlm.generate_rings',obj.Panels,obj.Nodes);
+                else
+                    val = laca.vlm.generate_rings(obj.Panels,obj.Nodes);
+                end
             else
                 val = obj.Flexi_func(obj.U,val);
+                val = obj.Rot*val + repmat(obj.R,1,size(val,2));
+                val = obj.Stitch_func(obj.U,val);
             end
-            val = obj.Rot*val + repmat(obj.R,1,size(val,2));
-            val = obj.Stitch_func(obj.U,val);
+
         end
+
         function val = get.Collocation(obj)
             if obj.useMEX
                 val = laca.vlm.vlm_C_code('laca.vlm.get_collocation',obj.Panels,obj.Nodes,obj.dC_l_dalpha);
@@ -207,30 +261,40 @@ classdef Section < laca.vlm.Base
         end
 
         function val = get.Centroid(obj)
-
-            N = reshape(sum(reshape(obj.Nodes(:,obj.Panels(1:2,:)),3,2,[]),2),3,[])./2;
-            S = reshape(sum(reshape(obj.Nodes(:,obj.Panels(3:4,:)),3,2,[]),2),3,[])./2;
-            val = (N+S)./2;
-
-            % val = squeeze(sum(obj.Midpoint,2))./2;
-            % val = obj.Stitch_func(obj.U,val);
+            p1 = obj.Nodes(:,obj.Panels(1,:));
+            p2 = obj.Nodes(:,obj.Panels(2,:));
+            p3 = obj.Nodes(:,obj.Panels(3,:));
+            p4 = obj.Nodes(:,obj.Panels(4,:));
+            val = (p1+p2+p3+p4)/4;
         end
 
         function val = get.Filiment_Position(obj)
             val = obj.base_FilimentPosition;
             if obj.isLinearDeformation
                 val = val + reshape(pagemtimes(obj.G_fil,obj.U(1:obj.DoFs)),3,[]);
+                val = obj.Rot*val + repmat(obj.R,1,size(val,2));
+                val = obj.Stitch_func(obj.U,val);
+            elseif obj.useSuperNodes
+                % val = zeros(3,size(obj.base_nodes,2));
+                if obj.useMEX
+                    val = laca.vlm.vlm_C_code('laca.vlm.panel_compass',obj.Panels,obj.RingNodes);
+                else
+                    val = laca.vlm.panel_compass(obj.Panels,obj.RingNodes);
+                end
             else
                 val = obj.Flexi_func(obj.U,val);
+                val = obj.Rot*val + repmat(obj.R,1,size(val,2));
+                val = obj.Stitch_func(obj.U,val);
             end
-            val = obj.Rot*val + repmat(obj.R,1,size(val,2));
-            val = obj.Stitch_func(obj.U,val);
+
         end
+
         function val = get.Midpoint(obj)
             val = zeros(3,2,obj.NPanels);
             val(:,1,:) = reshape(sum(reshape(obj.Nodes(:,obj.Panels(1:2,:)),3,2,[]),2),3,[])./2;
             val(:,2,:) = reshape(sum(reshape(obj.Nodes(:,obj.Panels(3:4,:)),3,2,[]),2),3,[])./2;
         end
+
         function val = get.Normal(obj)
             if ~obj.updateNormal
                 val = obj.Rot*obj.base_normal;
@@ -249,11 +313,23 @@ classdef Section < laca.vlm.Base
                 end            
             end
         end
-        function obj = Section(Panels,Nodes,isLE,isTE,Connectivity)
+
+        function obj = Section(Panels,Nodes,isLE,isTE,Connectivity,opts)
+            arguments
+                Panels 
+                Nodes 
+                isLE 
+                isTE 
+                Connectivity 
+                opts.SuperNodes = [];
+                opts.SuperConnectivity = []; 
+            end
             %MODEL Construct an instance of this class
             %   Detailed explanation goes here
             obj.Panels = Panels;
             obj.base_nodes = Nodes;
+            obj.super_base_nodes = opts.SuperNodes;
+            obj.super_connectivity = opts.SuperConnectivity;
             obj.isLE = isLE;
             obj.isTE = isTE;
             obj.Connectivity = Connectivity;
@@ -282,7 +358,14 @@ classdef Section < laca.vlm.Base
                 obj.base_FilimentPosition = laca.vlm.panel_compass(Panels,obj.base_ringNodes);
             end
 
+            % for i = 1:NSpan+1
+            %     idx = i:size(obj.super_base_nodes,2):size(obj.base_nodes,2);
+            %     obj.super_connectivity_RingNodes(:,:,i) = obj.base_ringNodes(:,idx)-obj.super_base_nodes(:,i);
+            %     obj.super_connectivity_FilimentPosition(:,:,i) = obj.base_FilimentPosition(:,idx)-obj.super_base_nodes(:,i);
+            % end
+
         end
+
         function obj = apply_result_katz(obj,gamma,L,V,rho)
             obj.Gamma = gamma;
             obj.V = V;
@@ -301,9 +384,10 @@ classdef Section < laca.vlm.Base
                     = laca.vlm.apply_result(Fs,V(obj.Centroid),obj.Normal,obj.Area,rho);
             end
         end
+
     end
     methods(Static)
-        obj = From_laca_section(wingSection,minSpan,NChord,ignoreControlSurf);
+        obj = From_laca_section(wingSection,minSpan,NChord,ignoreControlSurf,targetAR);
         obj = From_LE_TE(LE,TE,chord_eta_LHS,chord_eta_RHS,NControl,ControlDeflection,NormalWash);
     end
 end

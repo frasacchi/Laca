@@ -1,4 +1,13 @@
-function obj = From_LE_TE(LE,TE,chord_eta_LHS,chord_eta_RHS,NormalWash,controlSurface)
+function obj = From_LE_TE(LE,TE,chord_eta_LHS,chord_eta_RHS,NormalWash,controlSurface,opts)
+arguments
+    LE 
+    TE 
+    chord_eta_LHS 
+    chord_eta_RHS 
+    NormalWash 
+    controlSurface 
+    opts.Bpos = []; 
+end
 %FROM_LE_TE generates Section from a definition of the LE and TE of a wing
 %
 % LE - 3xN matrix of N positions making up the leading edge
@@ -20,6 +29,7 @@ if length(chord_eta_LHS) ~= length(chord_eta_RHS)
 end
 
 nodes = zeros(3,(NSpan+1)*(NChord+1));
+supernodes = zeros(3,(NSpan+1));
 dir = TE - LE;
 
 chord_step = (chord_eta_RHS-chord_eta_LHS)./(NChord);
@@ -31,6 +41,8 @@ if ~strcmp(controlSurface.Name,'None') && controlSurface.NControl > 0
     end_hinge_idx = (NSpan+1)*(NChord-controlSurface.NControl+1);
     controlSurface.HingeNodes = [start_hinge_idx,end_hinge_idx];
 end
+
+
 for j = 1:NChord+1
     start_idx = (NSpan+1)*(j-1) + 1;
     end_idx = (NSpan+1)*j;
@@ -39,6 +51,15 @@ for j = 1:NChord+1
         controlSurface.Nodes = [controlSurface.Nodes,start_idx:end_idx];
         controlSurface.Panels = [controlSurface.Panels,(NSpan*(j-2) + 1):(NSpan*(j-1))];
     end
+
+    if ~isempty(opts.Bpos) &&  all(chord_eta(j,:) == opts.Bpos)
+        supernodes(:,1:(NSpan+1)) = LE + dir.*repmat(chord_eta(j,:),3,1);
+    end
+end
+
+for i = 1:NSpan+1
+    idx = i:(NSpan+1):(NSpan+1)*(NChord+1);
+    superconnectivity(:,:,i) = nodes(:,idx)-supernodes(:,i);
 end
 
 N = NSpan*NChord;
@@ -74,7 +95,8 @@ for j = 1:NChord
         end
     end
 end
-obj = laca.vlm.Section(panels,nodes,isLE,isTE,connectivity);
+
+obj = laca.vlm.Section(panels,nodes,isLE,isTE,connectivity,"SuperNodes",supernodes,"SuperConnectivity",superconnectivity);
 obj.ControlSurfaces = controlSurface;
 obj.Normalwash = normalwash;
 end

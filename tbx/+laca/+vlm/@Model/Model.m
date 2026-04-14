@@ -3,7 +3,7 @@ classdef Model < laca.vlm.Base
     %   Detailed explanation goes here
 
     properties
-        useMEX = true;
+        useMEX = false;
         TENodes;
         TERings;
         TEidx;
@@ -28,11 +28,26 @@ classdef Model < laca.vlm.Base
         Wings;
         XZ_sym = false;
     end
+
     properties
         Filiment_tol = 0.2;
     end
+
     properties(Access = private)
         Panels_cache;
+    end
+
+    properties(Dependent)
+        N;
+        L;
+        D;
+        S;
+        F;
+        Lprime;
+        P;
+        Cp;
+        Cl;
+        Cd;
     end
 
     properties(Dependent)
@@ -41,6 +56,7 @@ classdef Model < laca.vlm.Base
         Centroid
         Panels
         Nodes
+        SuperNodes
         PanelNormal
         StripIDs
         isTE
@@ -127,8 +143,52 @@ classdef Model < laca.vlm.Base
             obj.Panels_cache = val;
             end
         end
+        function val = get.F(obj)
+            res = cellfun(@(x)x.F,obj.Wings,'UniformOutput',false);
+            val = cat(2,res{:});
+        end
+        function val = get.N(obj)
+            res = cellfun(@(x)x.N,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
+        end
+        function val = get.L(obj)
+            res = cellfun(@(x)x.L,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
+        end
+        function val = get.D(obj)
+            res = cellfun(@(x)x.D,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
+        end
+        function val = get.S(obj)
+            res = cellfun(@(x)x.S,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
+        end
+        function val = get.Lprime(obj)
+            res = cellfun(@(x)x.Lprime,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
+        end
+        function val = get.P(obj)
+            res = cellfun(@(x)x.P,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
+        end
+        function val = get.Cp(obj)
+            res = cellfun(@(x)x.Cp,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
+        end
+        function val = get.Cl(obj)
+            res = cellfun(@(x)x.Cl,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
+        end
+        function val = get.Cd(obj)
+            res = cellfun(@(x)x.Cd,obj.Wings,'UniformOutput',false);
+            val = cat(1,res{:});
+        end
         function val = get.Nodes(obj)
             res = cellfun(@(x)x.Nodes,obj.Wings,'UniformOutput',false);
+            val = cat(2,res{:});
+        end
+        function val = get.SuperNodes(obj)
+            res = cellfun(@(x)x.SuperNodes,obj.Wings,'UniformOutput',false);
             val = cat(2,res{:});
         end
         function val = get.RingNodes(obj)
@@ -296,27 +356,34 @@ classdef Model < laca.vlm.Base
             if (obj.HasKatzResult || obj.HasFilResult) && ~isempty(p.Results.param)
                 plt_obj.FaceVertexCData = obj.Get_Prop(p.Results.param);
                 plt_obj.FaceColor = 'flat';
+                colormap('parula');
+                max_val = max(abs(plt_obj.FaceVertexCData));
+                if max_val==0 max_val = 1; end
+                caxis([-max_val, max_val]);
+                cb = colorbar;
+                cb.Label.String = p.Results.param;
             end
         end
 
-        function plt_obj = draw_streamline(obj,point,varargin)
-            p = inputParser;
-            p.addParameter('iter',500)
-            p.addParameter('timeStep',1e-3)
-            p.addParameter('Rotate',eye(3))
-            p.parse(varargin{:})
-
-            res = zeros(3,p.Results.iter+1);
-            res(:,1) = point;
-            for i = 1:p.Results.iter
-                v_i = obj.generate_AIC_mex('induced_velocity',...
-                    res(:,i),obj.Rings,obj.TERings,obj.TEidx,obj.Gamma);
-                res(:,i+1) = res(:,i) + ...
-                    (obj.V(res(:,i))*-1+v_i).*p.Results.timeStep;
-            end
-            res = p.Results.Rotate * res;
-            plt_obj = plot3(res(1,:)',res(2,:)',res(3,:)','r-');
-        end
+        % TODO -fix
+        % function plt_obj = draw_streamline(obj,point,varargin)
+        %     p = inputParser;
+        %     p.addParameter('iter',500)
+        %     p.addParameter('timeStep',1e-3)
+        %     p.addParameter('Rotate',eye(3))
+        %     p.parse(varargin{:})
+        % 
+        %     res = zeros(3,p.Results.iter+1);
+        %     res(:,1) = point;
+        %     for i = 1:p.Results.iter
+        %         v_i = obj.generate_AIC('induced_velocity',...
+        %             res(:,i),obj.RingNodes,obj.TERings,obj.TEidx,obj.Gamma);
+        %         res(:,i+1) = res(:,i) + ...
+        %             (obj.V(res(:,i))*-1+v_i).*p.Results.timeStep;
+        %     end
+        %     res = p.Results.Rotate * res;
+        %     plt_obj = plot3(res(1,:)',res(2,:)',res(3,:)','r-');
+        % end
 
         function plt_obj = draw_rings(obj,opts)
             arguments
@@ -340,7 +407,7 @@ classdef Model < laca.vlm.Base
 
                 if opts.DrawTE
                     func = @(n)reshape(teNodes(n,obj.TERings),4,[]);
-                    plt_obj(3) = patch(func(1),func(2),func(3),'--');
+                    plt_obj(3) = patch(func(1),func(2),func(3),'-b');
                     plt_obj(3).FaceAlpha = 0;
                     plt_obj(3).EdgeColor = [0 0 0];
                     plt_obj(3).LineWidth = opts.LineWidth*0.5;
@@ -353,18 +420,22 @@ classdef Model < laca.vlm.Base
 
     end
     methods(Static)
-        function obj = From_laca_model(lacaModel,minSpan,NChord,ignoreControlSurf)
-            if length(NChord) == 1
+        function obj = From_laca_model(lacaModel,minSpan,NChord,ignoreControlSurf,targetAR)
+            if nargin < 5
+                targetAR = [];
+            end
+
+            if isscalar(NChord)
                 NChords = ones(1,length(lacaModel.Wings))*NChord;
             else
                 NChords = NChord;
             end
-            if length(minSpan) == 1
-                minSpan = ones(1,length(lacaModel.Wings))*minSpan;
+            if isscalar(minSpan) || length(minSpan) ~= length(lacaModel.Wings)
+                minSpan = ones(1,length(lacaModel.Wings))*minSpan(1);
             end
             wings = {};
             for i = 1:length(lacaModel.Wings)
-                wings{i} = laca.vlm.Wing.From_laca_wing(lacaModel.Wings{i},minSpan(i),NChords(i),ignoreControlSurf);
+                wings{i} = laca.vlm.Wing.From_laca_wing(lacaModel.Wings{i},minSpan(i),NChords(i),ignoreControlSurf,targetAR);
             end
             obj = laca.vlm.Model(wings);
             obj.Name = lacaModel.Name;

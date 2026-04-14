@@ -18,6 +18,7 @@ classdef Wing < handle
         NPanels;
         LE;
         TE;
+        Baxis;
         Midpoint;
         Area;
         MAC;
@@ -67,6 +68,13 @@ classdef Wing < handle
             TE(:,1) = obj.WingSections{1}.TE(:,1);
             for i = 1:obj.NSections
                 TE(:,i+1) = obj.WingSections{i}.TE(:,2);
+            end
+        end
+        function Baxis = get.Baxis(obj)
+            Baxis = zeros(3,obj.NSections+1);
+            Baxis(:,1) = (1-obj.WingSections{1}.Bpos)*obj.WingSections{1}.LE(:,1)+obj.WingSections{1}.Bpos*obj.WingSections{1}.TE(:,1);
+            for i = 1:obj.NSections
+                Baxis(:,i+1) = (1-obj.WingSections{i}.Bpos)*obj.WingSections{i}.LE(:,2)+obj.WingSections{i}.Bpos*obj.WingSections{i}.TE(:,2);
             end
         end
         function Midpoint = get.Midpoint(obj)
@@ -184,7 +192,13 @@ classdef Wing < handle
         end
     end
     methods(Static)
-        function obj = From_LE_TE(LE,TE,RefControlSurfs)
+        function obj = From_LE_TE(LE,TE,RefControlSurfs,opts)
+            arguments
+                LE 
+                TE 
+                RefControlSurfs 
+                opts.Bpos = 0.25;
+            end
             if ~iscell(RefControlSurfs)
                 error('Input must be a cell array of RefControlSurf')
             end
@@ -199,6 +213,7 @@ classdef Wing < handle
             for i = 1:size(LE,2)-1
                 wingSections{i} = laca.model.WingSection(LE(:,i:i+1),...
                     TE(:,i:i+1));
+                wingSections{i}.Bpos = opts.Bpos;
             end
             % apply control surfs
             for i = 1:length(RefControlSurfs)

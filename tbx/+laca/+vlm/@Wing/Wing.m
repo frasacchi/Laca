@@ -21,6 +21,7 @@ classdef Wing < laca.vlm.Base
         Normal
         Panels
         Nodes
+        SuperNodes
         isTE
         isLE
         Area
@@ -178,6 +179,10 @@ classdef Wing < laca.vlm.Base
             res = cellfun(@(x)x.Nodes,obj.Sections,'UniformOutput',false);
             val = cat(2,res{:});
         end
+        function val = get.SuperNodes(obj)
+            res = cellfun(@(x)x.SuperNodes,obj.Sections,'UniformOutput',false);
+            val = cat(2,res{:});
+        end
         function val = get.RingNodes(obj)
             res = cellfun(@(x)x.RingNodes,obj.Sections,'UniformOutput',false);
             val = cat(2,res{:});
@@ -290,12 +295,12 @@ classdef Wing < laca.vlm.Base
 
     end
     methods(Static)
-        function obj = From_laca_wing(lacaWing,minSpan,NChord,ignoreControlSurf)
+        function obj = From_laca_wing(lacaWing,minSpan,NChord,ignoreControlSurf,targetAR)
             sections = {};
             for i = 1:length(lacaWing.WingSections)
                 sections{end+1} = laca.vlm.Section.From_laca_section(...
                     lacaWing.WingSections{i},minSpan,NChord,...
-                    ignoreControlSurf);
+                    ignoreControlSurf,targetAR);
             end
             obj = laca.vlm.Wing(sections);
         end

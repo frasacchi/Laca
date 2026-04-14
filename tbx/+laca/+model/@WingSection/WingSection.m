@@ -12,6 +12,7 @@ classdef WingSection < handle
         SplineSet = [];
         Rot = eye(3);
         R = zeros(3,1);
+        Bpos = 0.25; %beam position
     end
 
     properties
