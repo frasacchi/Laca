@@ -14,6 +14,7 @@ classdef Model < laca.vlm.Base
 
         AIC;
         AIC3D;
+        updateAIC = false;
 
         Gamma;
         V;
@@ -273,6 +274,7 @@ classdef Model < laca.vlm.Base
             M = sum(cross(pos-p,L_wings),2);
             res = [F_wings;M];
         end
+        
         function obj = set_panel_filiments(obj)
             if obj.useMEX
                 [obj.Filiment_Position,obj.Panel_Filiments] = ...
@@ -315,15 +317,22 @@ classdef Model < laca.vlm.Base
             else
                 obj.V_col = obj.V(obj.Collocation);
             end
+
+            if obj.updateAIC || isempty(obj.AIC)
+                [obj.AIC3D,obj.AIC] = laca.vlm.generate_AIC3D();
+            end
+
             if obj.useMEX
                 obj.Gamma = laca.vlm.vlm_C_code('laca.vlm.get_gamma',obj.V_col,obj.Normal,obj.Normalwash,obj.AIC);
             else
                 obj.Gamma = laca.vlm.get_gamma(obj.V_col,obj.Normal,obj.Normalwash,obj.AIC);
             end
         end
+
         function obj = Stitch(obj)
             obj.Wings = cellfun(@(x)x.Stitch,obj.Wings,'UniformOutput',false);
         end
+
         function obj = CombineWings(obj,idx)
             idx_to_keep = setdiff(1:length(obj.Wings),idx);
             new_wing = laca.vlm.Wing([obj.Wings{idx}.Sections]);
@@ -365,25 +374,60 @@ classdef Model < laca.vlm.Base
             end
         end
 
-        % TODO -fix
-        % function plt_obj = draw_streamline(obj,point,varargin)
-        %     p = inputParser;
-        %     p.addParameter('iter',500)
-        %     p.addParameter('timeStep',1e-3)
-        %     p.addParameter('Rotate',eye(3))
-        %     p.parse(varargin{:})
-        % 
-        %     res = zeros(3,p.Results.iter+1);
-        %     res(:,1) = point;
-        %     for i = 1:p.Results.iter
-        %         v_i = obj.generate_AIC('induced_velocity',...
-        %             res(:,i),obj.RingNodes,obj.TERings,obj.TEidx,obj.Gamma);
-        %         res(:,i+1) = res(:,i) + ...
-        %             (obj.V(res(:,i))*-1+v_i).*p.Results.timeStep;
-        %     end
-        %     res = p.Results.Rotate * res;
-        %     plt_obj = plot3(res(1,:)',res(2,:)',res(3,:)','r-');
-        % end
+        function plt_obj = draw_streamline(obj, point, varargin)
+            p = inputParser;
+            p.addParameter('iter', 500);
+            p.addParameter('timeStep', 1e-3);
+            p.addParameter('Rotate', eye(3));
+            p.addParameter('Method', 'RK4'); % Defaulted to RK4 for better stability
+            p.parse(varargin{:});
+
+            % 1. Enforce column vector for initial point to prevent dimension errors
+            point = point(:); 
+
+            % 2. Safety check: ensure VLM has been solved
+            if isempty(obj.Gamma)
+                error('Model must be solved (obj.Gamma is empty) before drawing streamlines.');
+            end
+
+            iter = p.Results.iter;
+            dt = p.Results.timeStep;
+            rot = p.Results.Rotate;
+            
+            res = zeros(3, iter + 1);
+            res(:, 1) = point;
+            
+            % Helper function to fetch total fluid velocity at coordinate X
+            get_velocity = @(X) -obj.V(X) + obj.generate_AIC('induced_velocity', ...
+                X, obj.RingNodes, obj.TERings, obj.TEidx, obj.Gamma);
+
+            % 3. Streamline Integration
+            for i = 1:iter
+                X_current = res(:, i);
+                
+                if strcmpi(p.Results.Method, 'RK4')
+                    % Runge-Kutta 4th Order (Highly recommended for vortex lattice streamlines)
+                    k1 = get_velocity(X_current);
+                    k2 = get_velocity(X_current + 0.5 * dt * k1);
+                    k3 = get_velocity(X_current + 0.5 * dt * k2);
+                    k4 = get_velocity(X_current + dt * k3);
+                    
+                    res(:, i+1) = X_current + (dt / 6) * (k1 + 2*k2 + 2*k3 + k4);
+                else
+                    % Forward Euler (Original implementation)
+                    v_total = get_velocity(X_current);
+                    res(:, i+1) = X_current + v_total * dt;
+                end
+            end
+            res = rot * res;
+
+            was_held = ishold;
+            hold on;
+            plt_obj = plot3(res(1,:)', res(2,:)', res(3,:)', 'r-', 'LineWidth', 1.5);
+            if ~was_held
+                hold off;
+            end
+        end
 
         function plt_obj = draw_rings(obj,opts)
             arguments
