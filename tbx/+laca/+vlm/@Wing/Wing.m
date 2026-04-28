@@ -54,8 +54,8 @@ classdef Wing < laca.vlm.Base
         Name = '';
         HasResult = false;
         U = []; % state vector
-        
     end
+    
     methods
         function set.useMEX(obj,val)
             obj.useMEX = val;
@@ -229,8 +229,6 @@ classdef Wing < laca.vlm.Base
         end
 
         function val = get.MAC(obj)
-            % Calculates the global Mean Aerodynamic Chord (MAC) by taking the
-            % area-weighted average of every DLM panel's chord.
             val = obj.Nchord*sum(obj.PanelChord .* obj.Area) / sum(obj.Area);
         end
     end

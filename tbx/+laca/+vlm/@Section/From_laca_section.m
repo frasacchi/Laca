@@ -69,7 +69,7 @@ function obj = From_laca_section(wingSection,minSpan,NChord,ignoreControlSurf,ta
     
     obj = laca.vlm.Section.From_LE_TE(LEs,TEs,chord_eta_LHS,chord_eta_RHS,...
         span_eta.*normalwash_grad + wingSection.Normalwash(1),controlSurface,"Bpos",wingSection.Bpos);
-    obj.Tag = wingSection.Name; % to fix! 
+    obj.Name = wingSection.Name;
     obj.R = wingSection.R;
     obj.Rot = wingSection.Rot;
 end

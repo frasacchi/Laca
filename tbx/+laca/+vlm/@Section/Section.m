@@ -59,7 +59,7 @@ classdef Section < laca.vlm.Base
         dC_l_dalpha;
         Normalwash;
         Connectivity;
-        Tag = '';
+        Name = '';
     end
 
     properties
@@ -124,7 +124,7 @@ classdef Section < laca.vlm.Base
                 obj.isLE,obj.isTE,obj.Connectivity);
             cp.Filiment_Force = obj.Filiment_Force;
             cp.Panel_Filiments = obj.Panel_Filiments;
-            cp.Tag = obj.Tag;
+            cp.Name = obj.Name;
             cp.Normalwash = obj.Normalwash;
             cp.Vbody_func = obj.Vbody_func;
             cp.R_ = obj.R_;
