@@ -57,6 +57,7 @@ for j = 1:NChord+1
     end
 end
 
+superconnectivity = zeros(3,NChord+1,NSpan+1);
 for i = 1:NSpan+1
     idx = i:(NSpan+1):(NSpan+1)*(NChord+1);
     superconnectivity(:,:,i) = nodes(:,idx)-supernodes(:,i);

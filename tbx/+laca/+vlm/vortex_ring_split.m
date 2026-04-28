@@ -5,7 +5,7 @@ function q = vortex_ring_split(coords,p,gamma)
 %   clockwise order
 n_vert = size(coords,2);
 idx = [1:n_vert,1];
-q = zeros(3,4);
+q = zeros(3,n_vert);
 for i = 1:n_vert
    q(:,i) = laca.vlm.vortex_line(coords(:,idx(i)),coords(:,idx(i+1)),p,gamma); 
 end

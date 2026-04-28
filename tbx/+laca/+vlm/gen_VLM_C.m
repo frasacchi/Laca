@@ -1,5 +1,15 @@
 clear functions
+clear mex
 folder = fileparts(which('laca.vlm.gen_VLM_C'));
+mex_file = fullfile(folder, ['vlm_C_code.' mexext]);
+if exist(mex_file, 'file')
+    try
+        delete(mex_file);
+    catch
+        warning('Could not delete existing MEX file. It may be locked by MATLAB. Try running "clear mex" or restarting MATLAB.');
+    end
+end
+
 panels = coder.typeof(0,[4,inf],[0 1]); 
 nodes = coder.typeof(0,[3,inf],[0 1]);
 AIC = coder.typeof(0,[inf,inf],[1 1]);
@@ -8,6 +18,7 @@ te_idx = coder.typeof(0,[inf,2],[1 0]);
 gamma = coder.typeof(0,[inf,1],[1 0]);
 isTE = coder.typeof(true,[inf 1],[1 0]);
 fil_idx = coder.typeof(true,[inf inf],[1 1]);
+area = coder.typeof(0,[inf,1],[1 0]);
 
 cfg = coder.config('mex');
 cfg.TargetLang = 'C++';
@@ -19,6 +30,8 @@ cfg.ResponsivenessChecks = false;
 
 vars = {'-o' fullfile(folder,'vlm_C_code') '-d' fullfile(folder,'codegen','mex','vlm_C_code')...
     '-config' 'cfg' '-report'};
+% Add some extra functions to the vars list to ensure they are compiled
+% although codegen usually follows the dependency tree.
 vars = [vars(:)' {which('laca.vlm.vortex_line')} {'-args'} ...
     {{[0;0;0],[0;0;0],[0;0;0],1,1}}];
 vars = [vars(:)' {which('laca.vlm.vortex_ring')} {'-args'} ...
@@ -40,7 +53,7 @@ vars = [vars(:)' {which('laca.vlm.get_collocation')} {'-args'} ...
 vars = [vars(:)' {which('laca.vlm.induced_velocity')} {'-args'} ...
     {{nodes,panels,nodes,panels,nodes,te_idx,gamma}}];
 vars = [vars(:)' {which('laca.vlm.apply_result')} {'-args'} ...
-    {{nodes,V,nodes,gamma,1}}];
+    {{nodes,V,nodes,area,1}}];
 vars = [vars(:)' {which('laca.vlm.get_perimeter_filiments')} {'-args'} ...
     {{panels,nodes,1,isTE}}];
 vars = [vars(:)' {which('laca.vlm.generate_rings')} {'-args'} ...

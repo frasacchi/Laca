@@ -7,6 +7,8 @@ classdef Model < laca.vlm.Base
         TENodes;
         TERings;
         TEidx;
+        MAC;
+        U = []; % state vector
 
         Filiment_Force;
         Filiment_Position;
@@ -28,6 +30,7 @@ classdef Model < laca.vlm.Base
         Name = '';
         Wings;
         XZ_sym = false;
+        Nchords;
     end
 
     properties
@@ -101,6 +104,12 @@ classdef Model < laca.vlm.Base
             obj.useMEX = val;
             for i = 1:length(obj.Wings)
                 obj.Wings{i}.useMEX = val;
+            end
+        end
+        function set.U(obj,val)
+            obj.U = val;
+            for i = 1:length(obj.Wings)
+                obj.Wings{i}.U = val;
             end
         end
         function val = get.NPanels(obj)
@@ -223,6 +232,15 @@ classdef Model < laca.vlm.Base
         function val = get.dC_l_dalpha(obj)
             val = cat(1,obj.Wings.dC_l_dalpha);
         end
+        function val = get.MAC(obj)
+            % Calculates the global Mean Aerodynamic Chord (MAC) by taking the
+            % area-weighted average of every DLM panel's chord.
+            res1 = cellfun(@(x)x.MAC,obj.Wings,'UniformOutput',false);
+            MAC = cat(1,res1{:});
+            res2 = cellfun(@(x)sum(x.Area),obj.Wings,'UniformOutput',false);
+            Area = cat(1,res2{:});
+            val = sum(MAC .* Area) / sum(Area);
+        end
         function val = get.StripIDs(obj)
             Con = obj.Connectivity;
             idx = 1;
@@ -274,7 +292,7 @@ classdef Model < laca.vlm.Base
             M = sum(cross(pos-p,L_wings),2);
             res = [F_wings;M];
         end
-        
+
         function obj = set_panel_filiments(obj)
             if obj.useMEX
                 [obj.Filiment_Position,obj.Panel_Filiments] = ...
@@ -319,7 +337,9 @@ classdef Model < laca.vlm.Base
             end
 
             if obj.updateAIC || isempty(obj.AIC)
-                [obj.AIC3D,obj.AIC] = laca.vlm.generate_AIC3D();
+                obj.set_panel_filiments();
+                obj.generate_te_horseshoe(100*obj.MAC*obj.V([0,0,0]')/norm(obj.V([0,0,0]')));
+                obj.generate_AIC3D();
             end
 
             if obj.useMEX
@@ -351,6 +371,29 @@ classdef Model < laca.vlm.Base
             obj.Wings = Wings;
         end
 
+        % function plt_obj = draw(obj,varargin)
+        %     p = inputParser;
+        %     p.addParameter('param','')
+        %     p.addParameter('PatchArgs',{})
+        %     p.addParameter('Rotate',eye(3))
+        %     p.parse(varargin{:})
+        %     clear plt_obj
+        %     nodes = p.Results.Rotate*obj.Nodes;
+        %     func = @(n)reshape(nodes(n,obj.Panels),4,[]);
+        %     plt_obj(1) = patch(func(1),func(2),func(3),'b',p.Results.PatchArgs{:});
+        %     %             plt_obj(1).FaceAlpha = 0.6;
+        %     if (obj.HasKatzResult || obj.HasFilResult) && ~isempty(p.Results.param)
+        %         plt_obj.FaceVertexCData = obj.Get_Prop(p.Results.param);
+        %         plt_obj.FaceColor = 'flat';
+        %         colormap('parula');
+        %         max_val = max(abs(plt_obj.FaceVertexCData));
+        %         if max_val==0 max_val = 1; end
+        %         caxis([-max_val, max_val]);
+        %         cb = colorbar;
+        %         cb.Label.String = p.Results.param;
+        %     end
+        % end
+
         function plt_obj = draw(obj,varargin)
             p = inputParser;
             p.addParameter('param','')
@@ -358,76 +401,133 @@ classdef Model < laca.vlm.Base
             p.addParameter('Rotate',eye(3))
             p.parse(varargin{:})
             clear plt_obj
-            nodes = p.Results.Rotate*obj.Nodes;
+            
+            nodes = p.Results.Rotate * obj.Nodes;
             func = @(n)reshape(nodes(n,obj.Panels),4,[]);
-            plt_obj(1) = patch(func(1),func(2),func(3),'b',p.Results.PatchArgs{:});
-            %             plt_obj(1).FaceAlpha = 0.6;
+
+            plt_obj(1) = patch(func(1), func(2), func(3), 'w', p.Results.PatchArgs{:});
+            % plt_obj(1).FaceAlpha = 0.6;
+            N_panels = size(obj.Panels, 2);
+            
+            % Define your RGB colors [R, G, B]
+            color_default = [0.2, 0.2, 0.8]; % Blue
+            color_LE      = [0.8, 0.2, 0.2]; % Red
+            color_TE      = [0.2, 0.8, 0.2]; % Green
+            panel_colors = repmat(color_default, N_panels, 1);
+            le_idx = obj.isLE(:);
+            te_idx = obj.isTE(:);
+            
+            % Apply LE and TE colors based on your logical arrays
+            panel_colors(le_idx, :) = repmat(color_LE, sum(le_idx), 1);
+            panel_colors(te_idx, :) = repmat(color_TE, sum(te_idx), 1);
+            
+            plt_obj(1).FaceVertexCData = panel_colors;
+            plt_obj(1).FaceColor = 'flat';
+
             if (obj.HasKatzResult || obj.HasFilResult) && ~isempty(p.Results.param)
-                plt_obj.FaceVertexCData = obj.Get_Prop(p.Results.param);
-                plt_obj.FaceColor = 'flat';
+                plt_obj(1).FaceVertexCData = obj.Get_Prop(p.Results.param);
+                plt_obj(1).FaceColor = 'flat';
                 colormap('parula');
-                max_val = max(abs(plt_obj.FaceVertexCData));
-                if max_val==0 max_val = 1; end
+                max_val = max(abs(plt_obj(1).FaceVertexCData));
+                if max_val == 0
+                    max_val = 1; 
+                end
                 caxis([-max_val, max_val]);
                 cb = colorbar;
                 cb.Label.String = p.Results.param;
-            end
-        end
-
-        function plt_obj = draw_streamline(obj, point, varargin)
-            p = inputParser;
-            p.addParameter('iter', 500);
-            p.addParameter('timeStep', 1e-3);
-            p.addParameter('Rotate', eye(3));
-            p.addParameter('Method', 'RK4'); % Defaulted to RK4 for better stability
-            p.parse(varargin{:});
-
-            % 1. Enforce column vector for initial point to prevent dimension errors
-            point = point(:); 
-
-            % 2. Safety check: ensure VLM has been solved
-            if isempty(obj.Gamma)
-                error('Model must be solved (obj.Gamma is empty) before drawing streamlines.');
-            end
-
-            iter = p.Results.iter;
-            dt = p.Results.timeStep;
-            rot = p.Results.Rotate;
-            
-            res = zeros(3, iter + 1);
-            res(:, 1) = point;
-            
-            % Helper function to fetch total fluid velocity at coordinate X
-            get_velocity = @(X) -obj.V(X) + obj.generate_AIC('induced_velocity', ...
-                X, obj.RingNodes, obj.TERings, obj.TEidx, obj.Gamma);
-
-            % 3. Streamline Integration
-            for i = 1:iter
-                X_current = res(:, i);
+            else
+                h_le  = patch(NaN, NaN, 'w', 'FaceColor', color_LE, 'EdgeColor', 'k');
+                h_te  = patch(NaN, NaN, 'w', 'FaceColor', color_TE, 'EdgeColor', 'k');
                 
-                if strcmpi(p.Results.Method, 'RK4')
-                    % Runge-Kutta 4th Order (Highly recommended for vortex lattice streamlines)
-                    k1 = get_velocity(X_current);
-                    k2 = get_velocity(X_current + 0.5 * dt * k1);
-                    k3 = get_velocity(X_current + 0.5 * dt * k2);
-                    k4 = get_velocity(X_current + dt * k3);
-                    
-                    res(:, i+1) = X_current + (dt / 6) * (k1 + 2*k2 + 2*k3 + k4);
-                else
-                    % Forward Euler (Original implementation)
-                    v_total = get_velocity(X_current);
-                    res(:, i+1) = X_current + v_total * dt;
-                end
-            end
-            res = rot * res;
-
-            was_held = ishold;
-            hold on;
-            plt_obj = plot3(res(1,:)', res(2,:)', res(3,:)', 'r-', 'LineWidth', 1.5);
-            if ~was_held
-                hold off;
+                legend([h_le, h_te], {'LE', 'TE'}, ...
+                    'Location', 'best', 'AutoUpdate', 'off');
             end
         end
+
+        % function plt_obj = draw_streamline(obj, point, varargin)
+        %     p = inputParser;
+        %     p.addParameter('iter', 500);
+        %     p.addParameter('timeStep', 1e-3);
+        %     p.addParameter('Rotate', eye(3));
+        %     p.addParameter('Method', 'RK4'); % Defaulted to RK4 for better stability
+        %     p.parse(varargin{:});
+
+        %     % Enforce column vector
+        %     point = point(:); 
+
+        %     if isempty(obj.Gamma)
+        %         error('Model must be solved (obj.Gamma is empty) before drawing streamlines.');
+        %     end
+
+        %     iter = p.Results.iter;
+        %     dt = p.Results.timeStep;
+        %     rot = p.Results.Rotate;
+            
+        %     res = zeros(3, iter + 1);
+        %     res(:, 1) = point;
+            
+        %     for i = 1:iter
+        %         X_current = res(:, i);
+                
+        %         if strcmpi(p.Results.Method, 'RK4')
+        %             % Runge-Kutta 4th Order
+        %             k1 = get_total_velocity(X_current);
+        %             k2 = get_total_velocity(X_current + 0.5 * dt * k1);
+        %             k3 = get_total_velocity(X_current + 0.5 * dt * k2);
+        %             k4 = get_total_velocity(X_current + dt * k3);
+                    
+        %             res(:, i+1) = X_current + (dt / 6) * (k1 + 2*k2 + 2*k3 + k4);
+        %         else
+        %             % Forward Euler
+        %             res(:, i+1) = X_current + get_total_velocity(X_current) * dt;
+        %         end
+        %     end
+
+        %     res = rot * res;
+            
+        %     was_held = ishold;
+        %     hold on;
+        %     plt_obj = plot3(res(1,:)', res(2,:)', res(3,:)', 'r-', 'LineWidth', 1.5);
+        %     if ~was_held
+        %         hold off;
+        %     end
+
+        %     % helpers
+        %     function v_tot = get_total_velocity(X)
+        %         % Freestream (reversed sign as per original logic) + induced velocity
+        %         v_tot = -obj.V(X) + get_induced_velocity(X);
+        %     end
+
+        %     function v_ind = get_induced_velocity(X)
+        %         v_ind = zeros(3,1);
+                
+        %         % 1. Influence of bound vortex rings
+        %         for j = 1:size(obj.Panels, 2)
+        %             coords = obj.RingNodes(:, obj.Panels(:,j));
+        %             v = laca.vlm.vortex_ring(coords, X, 1);
+        %             if obj.XZ_sym
+        %                 col_sym = [X(1); -X(2); X(3)];
+        %                 v_tmp = laca.vlm.vortex_ring(coords, col_sym, 1);
+        %                 v = v + [v_tmp(1); -v_tmp(2); v_tmp(3)];
+        %             end
+        %             v_ind = v_ind + v * obj.Gamma(j);
+        %         end
+                
+        %         % 2. Influence of wake horseshoe panels
+        %         for j = 1:size(obj.TEidx, 1)
+        %             idx = obj.TEidx(j, 2);
+        %             coords = obj.TENodes(:, obj.TERings(:,j));
+        %             v = laca.vlm.horseshoe(coords, X, 1);
+        %             if obj.XZ_sym
+        %                 col_sym = [X(1); -X(2); X(3)];
+        %                 v_tmp = laca.vlm.horseshoe(coords, col_sym, 1);
+        %                 v = v + [v_tmp(1); -v_tmp(2); v_tmp(3)];
+        %             end
+        %             v_ind = v_ind + v * obj.Gamma(idx);
+        %         end
+        %     end
+            
+        % end
 
         function plt_obj = draw_rings(obj,opts)
             arguments
@@ -474,6 +574,7 @@ classdef Model < laca.vlm.Base
             else
                 NChords = NChord;
             end
+
             if isscalar(minSpan) || length(minSpan) ~= length(lacaModel.Wings)
                 minSpan = ones(1,length(lacaModel.Wings))*minSpan(1);
             end

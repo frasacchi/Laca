@@ -11,13 +11,21 @@ filiment_pos = laca.vlm.panel_compass(panels,ringNodes);
 ids = false(size(filiment_pos,2),NPanels);
 
 centroid = laca.vlm.panel_centroid(panels,ringNodes);
-[idx,~] = knnsearch(filiment_pos',centroid','k',size(filiment_pos,2));
+% [idx,~] = knnsearch(filiment_pos',centroid','k',size(filiment_pos,2));
 
 South = [true,false,true,false];
 South = repmat(South,1,NPanels);
 for i = 1:NPanels
-    idx_p = false(1,NPanels*4);
-    idx_p(idx(i,:)) = true;
+    % Optimization: only search filaments of current panel and its neighbors
+    % Panels are usually ordered such that neighbors are adjacent in the list.
+    % We search current panel i, and i-1, i+1 if they exist.
+    idx_p = false(1, NPanels*4);
+    p_start = max(1, i-1);
+    p_end = min(NPanels, i+1);
+    for p_idx = p_start:p_end
+        idx_p((p_idx-1)*4 + (1:4)) = true;
+    end
+    
     for k = 1:4
         if k == 3
             continue;

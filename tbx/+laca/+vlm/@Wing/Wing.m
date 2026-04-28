@@ -6,6 +6,8 @@ classdef Wing < laca.vlm.Base
         Filiment_Force;
         Filiment_Position;
         Panel_Filiments;
+        MAC;
+        Nchord;
     end
     properties(SetAccess = immutable)
         NPanels;
@@ -48,9 +50,10 @@ classdef Wing < laca.vlm.Base
     end
     % results
     properties
-        useMEX = true;
+        useMEX = false;
         Name = '';
         HasResult = false;
+        U = []; % state vector
         
     end
     methods
@@ -60,6 +63,14 @@ classdef Wing < laca.vlm.Base
                 obj.Sections{i}.useMEX = val;
             end
         end
+
+        function set.U(obj,val)
+            obj.U = val;
+            for i = 1:length(obj.Sections)
+                obj.Sections{i}.U = val;
+            end
+        end
+
       function cp = copy(obj)
          % Shallow copy object
          cp = laca.vlm.Wing(cellfun(@(x)x.copy,obj.Sections,'UniformOutput',false));
@@ -69,6 +80,8 @@ classdef Wing < laca.vlm.Base
          cp.Filiment_Force = obj.Filiment_Force;
          cp.Filiment_Position = obj.Filiment_Position;
          cp.Panel_Filiments = obj.Panel_Filiments;
+         cp.Gamma = obj.Gamma;
+         cp.U = obj.U;
       end
    end
 
@@ -79,16 +92,19 @@ classdef Wing < laca.vlm.Base
                 obj.Sections{i}.Vbody_func = val;
             end
         end
+
         function set.Rot(obj,val)
             for i = 1:length(obj.Sections)
                 obj.Sections{i}.Rot = val;
             end
         end
+
         function set.R(obj,val)
             for i = 1:length(obj.Sections)
                 obj.Sections{i}.R = val;
             end
         end
+        
         function val = get.Connectivity(obj)
             res = cellfun(@(x)x.Connectivity,obj.Sections,'UniformOutput',false);
             val = cat(2,res{:});
@@ -211,6 +227,12 @@ classdef Wing < laca.vlm.Base
             res = cellfun(@(x)x.Normalwash,obj.Sections,'UniformOutput',false);
             val = cat(1,res{:});
         end
+
+        function val = get.MAC(obj)
+            % Calculates the global Mean Aerodynamic Chord (MAC) by taking the
+            % area-weighted average of every DLM panel's chord.
+            val = obj.Nchord*sum(obj.PanelChord .* obj.Area) / sum(obj.Area);
+        end
     end
 
     methods
@@ -303,6 +325,7 @@ classdef Wing < laca.vlm.Base
                     ignoreControlSurf,targetAR);
             end
             obj = laca.vlm.Wing(sections);
+            obj.Nchord = NChord;
         end
         function obj = From_LE_TE(LE,TE,NChord)
             obj = laca.vlm.Section.From_LE_TE(LE,TE,NChord);
