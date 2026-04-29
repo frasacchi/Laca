@@ -7,8 +7,6 @@ classdef Model < laca.vlm.Base
         TENodes;
         TERings;
         TEidx;
-        MAC;
-        U = []; % state vector
 
         Filiment_Force;
         Filiment_Position;
@@ -25,6 +23,7 @@ classdef Model < laca.vlm.Base
 
         isStitch = true;
 
+        U = []; % state vector
         HasKatzResult = false;
         HasFilResult = false;
         Name = '';
@@ -67,6 +66,7 @@ classdef Model < laca.vlm.Base
         isLE
         Normalwash
         Area
+        MAC;
         PanelChord;
         PanelSpan;
         Connectivity;
@@ -292,7 +292,6 @@ classdef Model < laca.vlm.Base
             M = sum(cross(pos-p,L_wings),2);
             res = [F_wings;M];
         end
-
         function obj = set_panel_filiments(obj)
             if obj.useMEX
                 [obj.Filiment_Position,obj.Panel_Filiments] = ...
@@ -370,29 +369,6 @@ classdef Model < laca.vlm.Base
             end
             obj.Wings = Wings;
         end
-
-        % function plt_obj = draw(obj,varargin)
-        %     p = inputParser;
-        %     p.addParameter('param','')
-        %     p.addParameter('PatchArgs',{})
-        %     p.addParameter('Rotate',eye(3))
-        %     p.parse(varargin{:})
-        %     clear plt_obj
-        %     nodes = p.Results.Rotate*obj.Nodes;
-        %     func = @(n)reshape(nodes(n,obj.Panels),4,[]);
-        %     plt_obj(1) = patch(func(1),func(2),func(3),'b',p.Results.PatchArgs{:});
-        %     %             plt_obj(1).FaceAlpha = 0.6;
-        %     if (obj.HasKatzResult || obj.HasFilResult) && ~isempty(p.Results.param)
-        %         plt_obj.FaceVertexCData = obj.Get_Prop(p.Results.param);
-        %         plt_obj.FaceColor = 'flat';
-        %         colormap('parula');
-        %         max_val = max(abs(plt_obj.FaceVertexCData));
-        %         if max_val==0 max_val = 1; end
-        %         caxis([-max_val, max_val]);
-        %         cb = colorbar;
-        %         cb.Label.String = p.Results.param;
-        %     end
-        % end
 
         function plt_obj = draw(obj,varargin)
             p = inputParser;

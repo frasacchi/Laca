@@ -30,9 +30,12 @@ function obj = From_laca_section(wingSection,minSpan,NChord,ignoreControlSurf,ta
     end
 
     span_eta = linspace(0,1,NSpan+1);
-    
-    chord_eta_LHS = unique([linspace(0,1,NChord+1),wingSection.Bpos]);
-    chord_eta_RHS = unique([linspace(0,1,NChord+1),wingSection.Bpos]);
+
+    % chord_eta_LHS = unique([linspace(0,1,NChord+1),wingSection.Bpos]);
+    % chord_eta_RHS = unique([linspace(0,1,NChord+1),wingSection.Bpos]);
+
+    chord_eta_LHS = unique([linspace(0,1,NChord+1)]);
+    chord_eta_RHS = unique([linspace(0,1,NChord+1)]);
 
     %update size of NChord
     NChord = length(chord_eta_RHS)-1;
@@ -56,21 +59,20 @@ function obj = From_laca_section(wingSection,minSpan,NChord,ignoreControlSurf,ta
     else
         controlSurface = laca.vlm.ControlSurface.None;
     end
-    
+
     LE = wingSection.LE_hid;
     LE_dir = LE(:,2)-LE(:,1);
     LEs = repmat(LE(:,1),1,NSpan + 1) + repmat(span_eta,3,1).*repmat(LE_dir,1,NSpan+1);
-    
+
     TE = wingSection.TE_hid;
     TE_dir = TE(:,2)-TE(:,1);
     TEs = repmat(TE(:,1),1,NSpan + 1) + repmat(span_eta,3,1).*repmat(TE_dir,1,NSpan+1);
-    
+
     normalwash_grad = wingSection.Normalwash(2)-wingSection.Normalwash(1);
-    
+
     obj = laca.vlm.Section.From_LE_TE(LEs,TEs,chord_eta_LHS,chord_eta_RHS,...
-        span_eta.*normalwash_grad + wingSection.Normalwash(1),controlSurface,"Bpos",wingSection.Bpos);
-    obj.Name = wingSection.Name;
+        span_eta.*normalwash_grad + wingSection.Normalwash(1),controlSurface);
+    obj.Name = wingSection.Name; 
     obj.R = wingSection.R;
     obj.Rot = wingSection.Rot;
 end
-

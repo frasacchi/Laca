@@ -6,7 +6,6 @@ classdef Wing < laca.vlm.Base
         Filiment_Force;
         Filiment_Position;
         Panel_Filiments;
-        MAC;
         Nchord;
     end
     properties(SetAccess = immutable)
@@ -27,7 +26,8 @@ classdef Wing < laca.vlm.Base
         isTE
         isLE
         Area
-        Normalwash
+        MAC;
+        Normalwash;
         Rot;
         R;
         RingNodes;
@@ -63,14 +63,12 @@ classdef Wing < laca.vlm.Base
                 obj.Sections{i}.useMEX = val;
             end
         end
-
         function set.U(obj,val)
             obj.U = val;
             for i = 1:length(obj.Sections)
                 obj.Sections{i}.U = val;
             end
         end
-
       function cp = copy(obj)
          % Shallow copy object
          cp = laca.vlm.Wing(cellfun(@(x)x.copy,obj.Sections,'UniformOutput',false));
@@ -227,7 +225,6 @@ classdef Wing < laca.vlm.Base
             res = cellfun(@(x)x.Normalwash,obj.Sections,'UniformOutput',false);
             val = cat(1,res{:});
         end
-
         function val = get.MAC(obj)
             val = obj.Nchord*sum(obj.PanelChord .* obj.Area) / sum(obj.Area);
         end
