@@ -4,6 +4,7 @@ classdef Model < laca.vlm.Base
 
     properties
         useMEX = false;
+        
         TENodes;
         TERings;
         TEidx;
